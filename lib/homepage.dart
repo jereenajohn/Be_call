@@ -1,4 +1,5 @@
 import 'package:be_call/customer_details_view.dart';
+import 'package:be_call/recent_calls_page.dart';
 import 'package:flutter/material.dart';
 import 'package:be_call/call_report.dart';
 import 'package:be_call/dialerpage.dart';
@@ -26,11 +27,12 @@ class _HomepageState extends State<Homepage> {
 
   // Build all tab pages once so they're ready immediately
   late final List<Widget> _pages = [
-    _buildCallsPage(),
-    _buildContactsPage(),
-    const DialerPage(),
-    const CallReport(),
-    const SettingsPage(),
+    const RecentCallsPage(),
+    _buildContactsPage(), // index 0  -> Contacts
+    // index 1  -> Calls
+    const DialerPage(), // index 2
+    const CallReport(), // index 3
+    const SettingsPage(), // index 4
   ];
 
   void _onItemTapped(int index) {
@@ -54,10 +56,20 @@ class _HomepageState extends State<Homepage> {
         onTap: _onItemTapped,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.call), label: 'Calls'),
-          BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.contacts),
+            label: 'Contacts',
+          ),
+
           BottomNavigationBarItem(icon: Icon(Icons.dialpad), label: 'Keypad'),
-          BottomNavigationBarItem(icon: Icon(Icons.insert_chart), label: 'Reports'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.insert_chart),
+            label: 'Reports',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
     );
@@ -106,35 +118,35 @@ class _HomepageState extends State<Homepage> {
           ),
         ),
         const SizedBox(height: 16),
-       Expanded(
-  child: ListView.builder(
-    itemCount: customers.length,
-    itemBuilder: (context, index) {
-      return ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Colors.white,
-          child: Icon(Icons.person, color: Colors.black),
+        Expanded(
+          child: ListView.builder(
+            itemCount: customers.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.person, color: Colors.black),
+                ),
+                title: Text(
+                  customers[index],
+                  style: const TextStyle(color: Colors.white),
+                ),
+                // 👇 Add this
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => CustomerDetailsView(
+                            customerName: customers[index],
+                          ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
-        title: Text(
-          customers[index],
-          style: const TextStyle(color: Colors.white),
-        ),
-        // 👇 Add this
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CustomerDetailsView(
-                customerName: customers[index],
-              ),
-            ),
-          );
-        },
-      );
-    },
-  ),
-),
-
       ],
     );
   }
