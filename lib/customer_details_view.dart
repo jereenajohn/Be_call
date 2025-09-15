@@ -107,7 +107,15 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
             padding: const EdgeInsets.only(top: 50, bottom: 24),
             width: double.infinity,
             decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 26, 164, 143),
+              // ✅ Gradient replacing the solid color
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF009688), // top: deep teal
+                  Color(0xFF26A69A), // bottom: lighter teal
+                ],
+              ),
             ),
             child: Column(
               children: [
@@ -138,13 +146,8 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                 ),
 
                 // --- Curved container with location and icons ---
-                // --- Curved container with location and icons ---
                 Container(
-                  margin: const EdgeInsets.only(
-                    top: 16,
-                    left: 16, // ✅ space on the left
-                    right: 16, // ✅ space on the right
-                  ),
+                  margin: const EdgeInsets.only(top: 16, left: 16, right: 16),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 8,
@@ -182,7 +185,6 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
               ],
             ),
           ),
-
           // ---------- Body ----------
           Expanded(
             child: SingleChildScrollView(
