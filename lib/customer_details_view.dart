@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CustomerDetailsView extends StatefulWidget {
   final String customerName;
@@ -11,24 +12,31 @@ class CustomerDetailsView extends StatefulWidget {
 class _CustomerDetailsViewState extends State<CustomerDetailsView> {
   bool saveNotes = false;
   int _selectedIndex = 0;
-
   DateTime? _reminderDate;
 
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
   }
 
+  /// Launch phone dialer with the given number
+  Future<void> _launchDialer(String phoneNumber) async {
+    final Uri telUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (!await launchUrl(telUri)) {
+      throw 'Could not launch $phoneNumber';
+    }
+  }
+
   Future<void> _pickReminderDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _reminderDate ?? DateTime.now(),
-      firstDate: DateTime.now(),               // can't pick past dates
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Color.fromARGB(255, 26, 164, 143), // header & selected day
+              primary: Color.fromARGB(255, 26, 164, 143),
               onPrimary: Colors.white,
               surface: Colors.black,
               onSurface: Colors.white,
@@ -41,12 +49,14 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
 
     if (picked != null && picked != _reminderDate) {
       setState(() => _reminderDate = picked);
-      // You can also schedule a notification or save to DB here
+      // Save or schedule a notification here if needed
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    const String phoneNumber = '+918086868900';
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Column(
@@ -81,7 +91,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const Text('+91 8086868900',
+                const Text(phoneNumber,
                     style: TextStyle(color: Colors.white70)),
                 const SizedBox(height: 10),
                 Row(
@@ -96,7 +106,10 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                       backgroundColor: Color.fromARGB(255, 26, 164, 143),
                     ),
                     const SizedBox(width: 12),
-                    _roundIcon(Icons.call),
+                    _roundIcon(
+                      Icons.call,
+                      onTap: () => _launchDialer(phoneNumber),
+                    ),
                     const SizedBox(width: 12),
                     _roundIcon(Icons.message),
                     const SizedBox(width: 12),
@@ -211,7 +224,6 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                       ),
                     ),
                   ),
-
                 ],
               ),
             ),
@@ -219,7 +231,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
         ],
       ),
 
-      // ---------- Bottom Navigation Bar ----------
+      // ---------- Optional Bottom Navigation ----------
       // bottomNavigationBar: BottomNavigationBar(
       //   backgroundColor: Colors.black,
       //   type: BottomNavigationBarType.fixed,
@@ -238,10 +250,14 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
     );
   }
 
-  Widget _roundIcon(IconData icon) {
-    return CircleAvatar(
-      backgroundColor: Colors.black26,
-      child: Icon(icon, color: Colors.white),
+  /// Circular icon widget with optional tap action
+  Widget _roundIcon(IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: CircleAvatar(
+        backgroundColor: Colors.black26,
+        child: Icon(icon, color: Colors.white),
+      ),
     );
   }
 }
