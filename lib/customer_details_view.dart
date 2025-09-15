@@ -6,8 +6,9 @@ import 'package:permission_handler/permission_handler.dart';
 class CustomerDetailsView extends StatefulWidget {
   final String customerName;
   final String phoneNumber;
-  var date;
-   CustomerDetailsView({
+  final dynamic date;
+
+  const CustomerDetailsView({
     super.key,
     required this.customerName,
     required this.phoneNumber,
@@ -21,9 +22,10 @@ class CustomerDetailsView extends StatefulWidget {
 class _CustomerDetailsViewState extends State<CustomerDetailsView> {
   bool saveNotes = false;
   DateTime? _reminderDate;
+  final TextEditingController _noteController = TextEditingController();
 
   List<CallLogEntry> _displayCalls = [];
-  String _headerDate = '';   // ✅ shows the date above call list
+  String _headerDate = '';
 
   @override
   void initState() {
@@ -31,44 +33,43 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
     _fetchCalls();
   }
 
-Future<void> _fetchCalls() async {
-  if (!await Permission.phone.request().isGranted) return;
+  Future<void> _fetchCalls() async {
+    if (!await Permission.phone.request().isGranted) return;
 
-  // All call logs for this number
-  final logs = await CallLog.query(number: widget.phoneNumber);
-  if (logs.isEmpty) return;
+    final logs = await CallLog.query(number: widget.phoneNumber);
+    if (logs.isEmpty) return;
 
-  // --- Use the date coming from widget.date instead of today ---
-  final selectedDate = widget.date is DateTime
-      ? widget.date as DateTime
-      : DateTime.parse(widget.date.toString());
+    final selectedDate =
+        widget.date is DateTime
+            ? widget.date as DateTime
+            : DateTime.parse(widget.date.toString());
 
-  // Start and end boundaries for that day
-  final start = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-  final end = start.add(const Duration(days: 1));
+    final start = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    );
+    final end = start.add(const Duration(days: 1));
 
-  // Filter logs whose timestamp lies within the selected date
-  final matching = logs.where((c) {
-    final ts = DateTime.fromMillisecondsSinceEpoch(c.timestamp ?? 0);
-    return ts.isAfter(start) && ts.isBefore(end);
-  }).toList()
-    ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
+    final matching =
+        logs.where((c) {
+            final ts = DateTime.fromMillisecondsSinceEpoch(c.timestamp ?? 0);
+            return ts.isAfter(start) && ts.isBefore(end);
+          }).toList()
+          ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
 
-  // ✅ If the selected date is today, show “Today”, else formatted date
-  final now = DateTime.now();
-  final isToday = start.year == now.year &&
-      start.month == now.month &&
-      start.day == now.day;
+    final now = DateTime.now();
+    final isToday =
+        start.year == now.year &&
+        start.month == now.month &&
+        start.day == now.day;
 
-  _headerDate = isToday
-      ? 'Today'
-      : '${start.day}-${start.month}-${start.year}';
+    _headerDate =
+        isToday ? 'Today' : '${start.day}-${start.month}-${start.year}';
 
-  _displayCalls = matching;
-
-  setState(() {});
-}
-
+    _displayCalls = matching;
+    setState(() {});
+  }
 
   Future<void> _callDirect(String n) async =>
       FlutterPhoneDirectCaller.callNumber(n);
@@ -79,17 +80,18 @@ Future<void> _fetchCalls() async {
       initialDate: _reminderDate ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: Color.fromARGB(255, 26, 164, 143),
-            onPrimary: Colors.white,
-            surface: Colors.black,
-            onSurface: Colors.white,
+      builder:
+          (ctx, child) => Theme(
+            data: Theme.of(ctx).copyWith(
+              colorScheme: const ColorScheme.dark(
+                primary: Color.fromARGB(255, 26, 164, 143),
+                onPrimary: Colors.white,
+                surface: Colors.black,
+                onSurface: Colors.white,
+              ),
+            ),
+            child: child!,
           ),
-        ),
-        child: child!,
-      ),
     );
     if (picked != null) setState(() => _reminderDate = picked);
   }
@@ -122,30 +124,60 @@ Future<void> _fetchCalls() async {
                   child: Icon(Icons.person, size: 50, color: Colors.black),
                 ),
                 const SizedBox(height: 8),
-                Text(widget.customerName,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold)),
-                Text(widget.phoneNumber,
-                    style: const TextStyle(color: Colors.white70)),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Chip(
-                      label: Text('Ernakulam',
-                          style: TextStyle(color: Colors.white)),
-                      backgroundColor: Color.fromARGB(255, 26, 164, 143),
-                    ),
-                    const SizedBox(width: 12),
-                    _roundIcon(Icons.call,
-                        onTap: () => _callDirect(widget.phoneNumber)),
-                    const SizedBox(width: 12),
-                    _roundIcon(Icons.message),
-                    const SizedBox(width: 12),
-                    _roundIcon(Icons.chat),
-                  ],
+                Text(
+                  widget.customerName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  widget.phoneNumber,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+
+                // --- Curved container with location and icons ---
+                // --- Curved container with location and icons ---
+                Container(
+                  margin: const EdgeInsets.only(
+                    top: 16,
+                    left: 16, // ✅ space on the left
+                    right: 16, // ✅ space on the right
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(129, 13, 125, 114),
+                    borderRadius: BorderRadius.circular(40),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Ernakulam',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          _circleAction(
+                            icon: Icons.call,
+                            onTap: () => _callDirect(widget.phoneNumber),
+                          ),
+                          const SizedBox(width: 12),
+                          _circleAction(icon: Icons.message, onTap: () {}),
+                          const SizedBox(width: 12),
+                          _circleAction(icon: Icons.chat, onTap: () {}),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -159,85 +191,137 @@ Future<void> _fetchCalls() async {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.date != null)
-                 Text(
-  _headerDate.isEmpty ? 'Loading…' : _headerDate,
-  style: const TextStyle(
-    color: Colors.white,
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-  ),
-),
-
+                    Text(
+                      _headerDate.isEmpty ? 'Loading…' : _headerDate,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   const SizedBox(height: 8),
 
-                  // call log list (design unchanged)
-                  if(widget.date != null)
+                  // Call log list
+                  if (widget.date != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child:
+                          _displayCalls.isEmpty
+                              ? const Text(
+                                'No call history',
+                                style: TextStyle(color: Colors.white70),
+                              )
+                              : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children:
+                                    _displayCalls.map((c) {
+                                      final dt =
+                                          DateTime.fromMillisecondsSinceEpoch(
+                                            c.timestamp ?? 0,
+                                          );
+                                      final time =
+                                          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                                      final dur = c.duration ?? 0;
+                                      final type = c.callType?.name ?? 'Call';
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '$time  $type',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '$dur sec',
+                                            style: const TextStyle(
+                                              color: Colors.white54,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          const Divider(
+                                            color: Colors.white24,
+                                            height: 16,
+                                          ),
+                                        ],
+                                      );
+                                    }).toList(),
+                              ),
+                    ),
+
+                  const SizedBox(height: 20),
+
+                  // Notes heading
+                  const Text(
+                    'Notes',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Notes container with toggle
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.grey[900],
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: _displayCalls.isEmpty
-                        ? const Text('No call history',
-                            style: TextStyle(color: Colors.white70))
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: _displayCalls.map((c) {
-                              final dt = DateTime.fromMillisecondsSinceEpoch(
-                                  c.timestamp ?? 0);
-                              final time =
-                                  '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-                              final dur = c.duration ?? 0;
-                              final type = c.callType?.name ?? 'Call';
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('$time  $type',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 16)),
-                                  const SizedBox(height: 4),
-                                  Text('$dur sec',
-                                      style: const TextStyle(
-                                          color: Colors.white54, fontSize: 14)),
-                                  const Divider(
-                                      color: Colors.white24, height: 16),
-                                ],
-                              );
-                            }).toList(),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _noteController,
+                            style: const TextStyle(color: Colors.white),
+                            maxLines: 5,
+                            enabled: saveNotes,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: 'Type notes here...',
+                              hintStyle: TextStyle(color: Colors.white54),
+                            ),
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Switch with text inside thumb
+                        Transform.scale(
+                          scale: 1.2,
+                          child: Switch(
+                            value: saveNotes,
+                            activeColor: const Color.fromARGB(
+                              255,
+                              26,
+                              164,
+                              143,
+                            ),
+                            onChanged: (v) {
+                              setState(() => saveNotes = v);
+                              if (!v) _noteController.clear();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
-                  // ---- Rest of your widgets unchanged ----
-                  const SizedBox(height: 20),
-                  const Text('Notes',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextField(
-                      style: const TextStyle(color: Colors.white),
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Type notes here...',
-                        hintStyle: TextStyle(color: Colors.white54),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.calendar_today,
-                          color: Colors.white),
+                      icon: const Icon(
+                        Icons.calendar_today,
+                        color: Colors.white,
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey[850],
                         shape: RoundedRectangleBorder(
@@ -263,11 +347,18 @@ Future<void> _fetchCalls() async {
     );
   }
 
-  Widget _roundIcon(IconData icon, {VoidCallback? onTap}) => GestureDetector(
-        onTap: onTap,
-        child: CircleAvatar(
-          backgroundColor: Colors.black26,
-          child: Icon(icon, color: Colors.white),
+  Widget _circleAction({required IconData icon, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: Colors.black26,
+          shape: BoxShape.circle,
         ),
-      );
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
 }
