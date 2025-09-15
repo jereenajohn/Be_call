@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:be_call/customer_details_view.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:call_log/call_log.dart';
+import 'customer_details_view.dart';
+import 'package:intl/intl.dart';
+
 
 class RecentCallsPage extends StatefulWidget {
   const RecentCallsPage({super.key});
@@ -9,16 +13,89 @@ class RecentCallsPage extends StatefulWidget {
 }
 
 class _RecentCallsPageState extends State<RecentCallsPage> {
-  final List<Map<String, String>> recentCalls = [
-    {'name': 'Customer 1', 'time': 'Today 4:03 PM'},
-    {'name': 'Customer 2', 'time': 'Today 4:03 PM'},
-    {'name': 'Customer 3', 'time': 'Today 4:03 PM'},
-    {'name': 'Customer 4', 'time': 'Today 4:03 PM'},
-    {'name': 'Customer 5', 'time': 'Today 4:03 PM'},
-    {'name': 'Customer 6', 'time': 'Yesterday 4:03 PM'},
-    {'name': 'Customer 7', 'time': 'Yesterday 4:03 PM'},
-    {'name': 'Customer 8', 'time': '02 Jan, 2025 4:03 PM'},
-  ];
+  List<_GroupedCall> _allCalls = [];
+  List<_GroupedCall> _filteredCalls = [];
+  final TextEditingController _searchCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCalls();
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final q = _searchCtrl.text.toLowerCase();
+    setState(() {
+      _filteredCalls = q.isEmpty
+          ? _allCalls
+          : _allCalls
+              .where((c) =>
+                  (c.name ?? '').toLowerCase().contains(q) ||
+                  c.number.toLowerCase().contains(q))
+              .toList();
+    });
+  }
+
+  Future<void> _loadCalls() async {
+    if (await Permission.phone.request().isGranted &&
+        await Permission.contacts.request().isGranted) {
+      final entries = await CallLog.get();
+      final Map<String, _GroupedCall> bucket = {};
+
+      for (final e in entries) {
+        if (e.timestamp == null || e.number == null) continue;
+        final dt = DateTime.fromMillisecondsSinceEpoch(e.timestamp!);
+        final dayKey = DateTime(dt.year, dt.month, dt.day);
+        final numKey = _normalize(e.number!);
+        final key = '$numKey|$dayKey';
+
+        bucket.putIfAbsent(
+          key,
+          () => _GroupedCall(
+            number: numKey,
+            name: e.name ?? e.number ?? 'Unknown',
+            date: dayKey,
+            lastTime: dt,
+          ),
+        );
+
+        final g = bucket[key]!;
+        if (dt.isAfter(g.lastTime)) g.lastTime = dt;
+        if ((g.name == 'Unknown' || g.name == null) && e.name != null) {
+          g.name = e.name!;
+        }
+      }
+
+      final list = bucket.values.toList()
+        ..sort((a, b) => b.lastTime.compareTo(a.lastTime));
+      setState(() {
+        _allCalls = list;
+        _filteredCalls = list;
+      });
+    }
+  }
+
+  String _normalize(String n) {
+    final digits = n.replaceAll(RegExp(r'\D'), '');
+    return digits.length > 10 ? digits.substring(digits.length - 10) : digits;
+  }
+
+  String _dateLabel(DateTime d) {
+    final today = DateTime.now();
+    final yest = today.subtract(const Duration(days: 1));
+    if (d.year == today.year && d.month == today.month && d.day == today.day) {
+      return 'Today';
+    } else if (d.year == yest.year &&
+        d.month == yest.month &&
+        d.day == yest.day) {
+      return 'Yesterday';
+    }
+    return DateFormat('dd MMM yyyy').format(d);
+  }
+
+  String _timeLabel(DateTime dt) =>
+      DateFormat('h:mm a').format(dt); // e.g. 4:03 PM
 
   @override
   Widget build(BuildContext context) {
@@ -26,30 +103,25 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        elevation: 0,
         title: const Text(
           'Recents',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
         children: [
-          // ---------- Search bar ----------
+          // Search bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(8.0),
             child: TextField(
+              controller: _searchCtrl,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.grey[850],
+                fillColor: Colors.white10,
+                prefixIcon: const Icon(Icons.search, color: Colors.white54),
                 hintText: 'Search',
                 hintStyle: const TextStyle(color: Colors.white54),
-                prefixIcon: const Icon(Icons.search, color: Colors.white54),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
@@ -57,72 +129,80 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
               ),
             ),
           ),
-
-          // ---------- List of recent calls ----------
           Expanded(
-            child: ListView.separated(
-              itemCount: recentCalls.length,
-              separatorBuilder: (_, __) =>
-                  Divider(color: Colors.grey[800], height: 1),
-              itemBuilder: (context, index) {
-                final call = recentCalls[index];
-                return ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Colors.white10,
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-                  title: Text(
-                    call['name']!,
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w500),
-                  ),
-                  subtitle: const Text(
-                    'Phone',
-                    style: TextStyle(color: Colors.white54),
-                  ),
+            child: _filteredCalls.isEmpty
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                : ListView.separated(
+                    itemCount: _filteredCalls.length,
+                    separatorBuilder: (_, __) =>
+                        Divider(color: Colors.grey[800], height: 1),
+                    itemBuilder: (context, i) {
+                      final c = _filteredCalls[i];
+                      return ListTile(
+                        leading: const CircleAvatar(
+                          backgroundColor: Colors.white10,
+                          child: Icon(Icons.person, color: Colors.white),
+                        ),
+                        title: Text(
+  (c.name != null && c.name!.trim().isNotEmpty) ? c.name! : c.number,
+  style: const TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w500,
+    fontSize: 16,
+  ),
+),
 
-                  // ✅ Compact trailing widget to prevent overflow
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            call['time']!,
-                            style: const TextStyle(
-                                color: Colors.white70, fontSize: 12),
-                          ),
-                          const SizedBox(height: 4),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => CustomerDetailsView(
-                                    customerName: call['name']!,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Icon(
-                              Icons.info_outline,
-                              color: Color.fromARGB(255, 26, 164, 143),
-                              size: 20, // smaller to fit tile height
+                        subtitle: const Text(
+                          'Phone',
+                          style: TextStyle(color: Colors.white54),
+                        ),
+                        trailing: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _dateLabel(c.date),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 14),
+                            ),
+                            Text(
+                              _timeLabel(c.lastTime),
+                              style: const TextStyle(
+                                  color: Colors.white54, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CustomerDetailsView(
+                              customerName: c.name ?? c.number,
+                              phoneNumber: c.number,
+                              date: c.lastTime,
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
     );
   }
+}
+
+class _GroupedCall {
+  final String number;
+  String? name;
+  final DateTime date;
+  DateTime lastTime;
+  _GroupedCall({
+    required this.number,
+    required this.name,
+    required this.date,
+    required this.lastTime,
+  });
 }
