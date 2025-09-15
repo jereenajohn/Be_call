@@ -138,7 +138,7 @@ class _HomepageState extends State<Homepage> {
                     MaterialPageRoute(
                       builder:
                           (context) => CustomerDetailsView(
-                            customerName: customers[index],
+                            customerName: customers[index],phoneNumber: '8157845851',date: null,
                           ),
                     ),
                   );
