@@ -10,11 +10,7 @@ class CallReport extends StatefulWidget {
 class _CallReportState extends State<CallReport> {
   final List<Map<String, dynamic>> activeCalls = List.generate(
     20,
-    (i) => {
-      'no': i + 1,
-      'invoice': 'Customer ${i + 1}',
-      'amount': 1700.0,
-    },
+    (i) => {'no': i + 1, 'invoice': 'Customer ${i + 1}', 'amount': 1700.0},
   );
 
   final List<Map<String, dynamic>> productiveCalls = [
@@ -36,12 +32,12 @@ class _CallReportState extends State<CallReport> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Call Report',
+                'Call report',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,
@@ -50,9 +46,12 @@ class _CallReportState extends State<CallReport> {
               ),
               const SizedBox(height: 20),
 
-              // Overall calls count
+              // Overall total calls summary
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: const Color.fromARGB(255, 26, 164, 143),
                   borderRadius: BorderRadius.circular(20),
@@ -60,28 +59,31 @@ class _CallReportState extends State<CallReport> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Calls',
-                        style: TextStyle(color: Colors.white, fontSize: 18)),
-                    Text('${activeCalls.length}',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Total Calls',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                    Text(
+                      '${activeCalls.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // Active calls section
-              _buildExpandableSection(
+              _expandableTable(
                 title: 'Active Calls',
                 total: activeTotal,
                 data: activeCalls,
               ),
               const SizedBox(height: 16),
 
-              // Productive calls section
-              _buildExpandableSection(
+              _expandableTable(
                 title: 'Productive Calls',
                 total: productiveTotal,
                 data: productiveCalls,
@@ -93,7 +95,7 @@ class _CallReportState extends State<CallReport> {
     );
   }
 
-  Widget _buildExpandableSection({
+  Widget _expandableTable({
     required String title,
     required double total,
     required List<Map<String, dynamic>> data,
@@ -106,76 +108,99 @@ class _CallReportState extends State<CallReport> {
       child: ExpansionTile(
         collapsedIconColor: Colors.white,
         iconColor: Colors.white,
-        // Title row: heading + total side by side
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title,
-                style: const TextStyle(color: Colors.white, fontSize: 18)),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white, fontSize: 18),
+            ),
             Text(
               '₹${total.toStringAsFixed(0)}',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 16,
                 fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
             ),
           ],
         ),
         children: [
-          // Data Table
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowColor:
-                  MaterialStateProperty.all(const Color.fromARGB(255, 26, 164, 143)),
-              columns: const [
-                DataColumn(
-                    label: Text('No.', style: TextStyle(color: Colors.white))),
-                DataColumn(
-                    label: Text('Invoice', style: TextStyle(color: Colors.white))),
-                DataColumn(
-                    label: Text('Amount', style: TextStyle(color: Colors.white))),
-              ],
-              rows: data
-                  .map(
-                    (e) => DataRow(cells: [
-                      DataCell(Text('${e['no']}',
-                          style: const TextStyle(color: Colors.white))),
-                      DataCell(Text('${e['invoice']}',
-                          style: const TextStyle(color: Colors.white))),
-                      DataCell(Text(
-                          '₹${(e['amount'] as double).toStringAsFixed(2)}',
-                          style: const TextStyle(color: Colors.white))),
-                    ]),
-                  )
-                  .toList(),
-            ),
+  Padding(
+  padding: const EdgeInsets.all(12),
+  child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: DataTable(
+      // Dark header color inside the table
+      headingRowColor: MaterialStateProperty.all(const Color(0xFF00695C)),
+      // Square borders: no borderRadius
+      border: TableBorder.all(
+        color: Colors.white,
+        width: 1,
+      ),
+      columns: const [
+        DataColumn(
+          label: Text(
+            'No.',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,fontSize: 11),
           ),
-          // Bottom total row (kept)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+        DataColumn(
+          label: Text(
+            'Invoice',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,fontSize: 11),
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            'Amount',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,fontSize: 11),
+          ),
+        ),
+      ],
+      rows: [
+        // ---- normal data rows ----
+        ...data.map(
+          (e) => DataRow(
+            cells: [
+              DataCell(Text('${e['no']}',
+                  style: const TextStyle(color: Colors.white, fontSize: 10,))),
+              DataCell(Text('${e['invoice']}',
+                  style: const TextStyle(color: Colors.white, fontSize: 10))),
+              DataCell(Text(
+                '₹${(e['amount'] as double).toStringAsFixed(2)}',
+                style: const TextStyle(color: Colors.white, fontSize: 10),
+              )),
+            ],
+          ),
+        ),
+        // ---- Total row with same dark fill ----
+        DataRow(
+          color: MaterialStateProperty.all(const Color(0xFF00695C)),
+          cells: [
+            const DataCell(
+              Text(
+                'Total',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Total',
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
-                Text(
-                  '₹${total.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16),
-                ),
-              ],
+            const DataCell(Text('')), // empty middle cell
+            DataCell(
+              Text(
+                '₹${total.toStringAsFixed(0)}',
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
+          ],
+        ),
+      ],
+    ),
+  ),
+)
+
+
         ],
       ),
     );
