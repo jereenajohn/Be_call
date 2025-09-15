@@ -1,6 +1,3 @@
-import 'package:be_call/dialerpage.dart';
-import 'package:be_call/homepage.dart';
-import 'package:be_call/profilepage.dart';
 import 'package:flutter/material.dart';
 
 class CallReport extends StatefulWidget {
@@ -11,12 +8,11 @@ class CallReport extends StatefulWidget {
 }
 
 class _CallReportState extends State<CallReport> {
-  // Sample data
   final List<Map<String, dynamic>> activeCalls = List.generate(
     20,
     (i) => {
       'no': i + 1,
-      'invoice': 'Customer 1',
+      'invoice': 'Customer ${i + 1}',
       'amount': 1700.0,
     },
   );
@@ -33,49 +29,6 @@ class _CallReportState extends State<CallReport> {
       activeCalls.fold(0.0, (sum, e) => sum + (e['amount'] as double));
   double get productiveTotal =>
       productiveCalls.fold(0.0, (sum, e) => sum + (e['amount'] as double));
- int _selectedIndex = 1; // Contacts is default
-
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-
-    if (index == 2) { // Keypad tapped
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const DialerPage()),
-      );
-    }
-      else if (index == 0) { // Keypad tapped
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const Homepage()),
-      );
-    }
-      else if (index == 1) { // Keypad tapped
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const Homepage()),
-      );
-    }
-
-    
-    else if (index == 3) { 
-        Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const CallReport()),
-      );
-    }
-    else if (index == 4) { 
-        Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SettingsPage()),
-      );// Reports tapped
-      // Navigate to Reports page if implemented
-    }
-    else if (index == 4) { // Settings tapped
-      // Navigate to Settings page if implemented
-    }
-    // you can add more conditions for other tabs if needed
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +41,7 @@ class _CallReportState extends State<CallReport> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Call report',
+                'Call Report',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 28,
@@ -97,7 +50,7 @@ class _CallReportState extends State<CallReport> {
               ),
               const SizedBox(height: 20),
 
-              // Total calls summary
+              // Overall calls count
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
@@ -106,11 +59,11 @@ class _CallReportState extends State<CallReport> {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text('Total calls',
+                  children: [
+                    const Text('Total Calls',
                         style: TextStyle(color: Colors.white, fontSize: 18)),
-                    Text('20',
-                        style: TextStyle(
+                    Text('${activeCalls.length}',
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold)),
@@ -119,50 +72,31 @@ class _CallReportState extends State<CallReport> {
               ),
               const SizedBox(height: 16),
 
-              // Active calls
+              // Active calls section
               _buildExpandableSection(
-                title: 'Active calls',
-                data: activeCalls,
+                title: 'Active Calls',
                 total: activeTotal,
+                data: activeCalls,
               ),
               const SizedBox(height: 16),
 
-              // Productive calls
+              // Productive calls section
               _buildExpandableSection(
-                title: 'Productive calls',
-                data: productiveCalls,
+                title: 'Productive Calls',
                 total: productiveTotal,
+                data: productiveCalls,
               ),
             ],
           ),
         ),
       ),
-
-      // Bottom navigation bar
-      // bottomNavigationBar: BottomNavigationBar(
-      //   backgroundColor: Colors.black,
-      //   type: BottomNavigationBarType.fixed,
-      //   selectedItemColor: const Color.fromARGB(255, 26, 164, 143),
-      //   unselectedItemColor: Colors.grey,
-      //   currentIndex: _selectedIndex, // highlight Reports
-      //          onTap: _onItemTapped,
-
-      //   items: const [
-      //     BottomNavigationBarItem(icon: Icon(Icons.call), label: 'Calls'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.dialpad), label: 'Keypad'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.insert_chart), label: 'Reports'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-      //   ],
-      // ),
     );
   }
 
-  /// Helper widget to build an expandable table section
   Widget _buildExpandableSection({
     required String title,
-    required List<Map<String, dynamic>> data,
     required double total,
+    required List<Map<String, dynamic>> data,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -172,52 +106,57 @@ class _CallReportState extends State<CallReport> {
       child: ExpansionTile(
         collapsedIconColor: Colors.white,
         iconColor: Colors.white,
-        title: Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontSize: 18),
-        ),
-        children: [
-          // Table
-          Container(
-            width: double.infinity,
-            color: const Color.fromARGB(255, 26, 164, 143),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor:
-                    MaterialStateProperty.all(const Color.fromARGB(255, 26, 164, 143)),
-                columns: const [
-                  DataColumn(
-                      label: Text('No.', style: TextStyle(color: Colors.white))),
-                  DataColumn(
-                      label:
-                          Text('Invoice', style: TextStyle(color: Colors.white))),
-                  DataColumn(
-                      label:
-                          Text('Amount', style: TextStyle(color: Colors.white))),
-                ],
-                rows: data
-                    .map(
-                      (e) => DataRow(cells: [
-                        DataCell(Text('${e['no']}',
-                            style: const TextStyle(color: Colors.white))),
-                        DataCell(Text('${e['invoice']}',
-                            style: const TextStyle(color: Colors.white))),
-                        DataCell(Text(
-                            '₹${(e['amount'] as double).toStringAsFixed(2)}',
-                            style: const TextStyle(color: Colors.white))),
-                      ]),
-                    )
-                    .toList(),
+        // Title row: heading + total side by side
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title,
+                style: const TextStyle(color: Colors.white, fontSize: 18)),
+            Text(
+              '₹${total.toStringAsFixed(0)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
+          ],
+        ),
+        children: [
+          // Data Table
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowColor:
+                  MaterialStateProperty.all(const Color.fromARGB(255, 26, 164, 143)),
+              columns: const [
+                DataColumn(
+                    label: Text('No.', style: TextStyle(color: Colors.white))),
+                DataColumn(
+                    label: Text('Invoice', style: TextStyle(color: Colors.white))),
+                DataColumn(
+                    label: Text('Amount', style: TextStyle(color: Colors.white))),
+              ],
+              rows: data
+                  .map(
+                    (e) => DataRow(cells: [
+                      DataCell(Text('${e['no']}',
+                          style: const TextStyle(color: Colors.white))),
+                      DataCell(Text('${e['invoice']}',
+                          style: const TextStyle(color: Colors.white))),
+                      DataCell(Text(
+                          '₹${(e['amount'] as double).toStringAsFixed(2)}',
+                          style: const TextStyle(color: Colors.white))),
+                    ]),
+                  )
+                  .toList(),
+            ),
           ),
-          // Total Row
+          // Bottom total row (kept)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 26, 164, 143),
               border: Border(
                 top: BorderSide(color: Colors.grey.shade200, width: 1),
               ),
