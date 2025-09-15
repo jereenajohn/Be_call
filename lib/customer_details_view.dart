@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 class CustomerDetailsView extends StatefulWidget {
   final String customerName;
   const CustomerDetailsView({super.key, required this.customerName});
@@ -19,12 +19,9 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
   }
 
   /// Launch phone dialer with the given number
-  Future<void> _launchDialer(String phoneNumber) async {
-    final Uri telUri = Uri(scheme: 'tel', path: phoneNumber);
-    if (!await launchUrl(telUri)) {
-      throw 'Could not launch $phoneNumber';
-    }
-  }
+ Future<void> _callDirect(String phoneNumber) async {
+  await FlutterPhoneDirectCaller.callNumber(phoneNumber);
+}
 
   Future<void> _pickReminderDate() async {
     final DateTime? picked = await showDatePicker(
@@ -55,7 +52,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
 
   @override
   Widget build(BuildContext context) {
-    const String phoneNumber = '+918086868900';
+    const String phoneNumber = '+918157845851';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -108,7 +105,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                     const SizedBox(width: 12),
                     _roundIcon(
                       Icons.call,
-                      onTap: () => _launchDialer(phoneNumber),
+                      onTap: () => _callDirect(phoneNumber),
                     ),
                     const SizedBox(width: 12),
                     _roundIcon(Icons.message),
