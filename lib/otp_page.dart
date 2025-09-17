@@ -53,7 +53,6 @@ Future<void> postOtp() async {
       final data = jsonDecode(response.body);
       print("Data: $data");
 
-      // ✅ Save tokens for future authenticated requests
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('access_token', data['access']);
       await prefs.setString('refresh_token', data['refresh']);
@@ -69,7 +68,7 @@ Future<void> postOtp() async {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          backgroundColor: Colors.green,
+          backgroundColor: Color.fromARGB(255, 26, 164, 143),
           content: Text('OTP verified successfully'),
         ),
       );
