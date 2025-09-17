@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            backgroundColor: Colors.green,
+            backgroundColor: Color.fromARGB(255, 26, 164, 143),
             content: Text('OTP sent successfully'),
           ),
         );
