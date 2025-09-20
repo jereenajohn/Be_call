@@ -1,7 +1,7 @@
-import 'package:be_call/api.dart';
-import 'package:be_call/otp_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'otp_page.dart';
+import 'api.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,12 +19,12 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> postPhoneNumber() async {
+  Future<void> _postPhoneNumber() async {
     final phone = phoneController.text.trim();
-    print("Phone Number: $phone");
     if (phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your mobile number')),
+        const SnackBar(content: Text('Please enter your mobile number' ,style: TextStyle(color: Colors.white),), backgroundColor: Color.fromARGB(255, 26, 164, 143),
+      ),
       );
       return;
     }
@@ -34,16 +34,11 @@ class _LoginPageState extends State<LoginPage> {
         Uri.parse('$api/api/otp/request/'),
         body: {"phone": phone},
       );
-      debugPrint("Status: ${response.statusCode}");
-      debugPrint("Body: ${response.body}");
 
-      if (response.statusCode == 500) {
-        // Navigate to OTP page with the entered phone
+      if (response.statusCode == 200) {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => OtpPage(phoneNumber: phone),
-          ),
+          MaterialPageRoute(builder: (_) => OtpPage(phoneNumber: phone)),
         );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -59,105 +54,129 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          backgroundColor: Colors.red,
+          backgroundColor: Color.fromARGB(255, 26, 164, 143),
           content: Text('An error occurred. Please try again later.'),
         ),
       );
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 80),
-                child: Text(
-                  'Logo',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Verify your mobile number',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Enter your mobile number',
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      filled: true,
-                      fillColor: Colors.grey[900],
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 26, 164, 143),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      onPressed: postPhoneNumber,
-                      child: const Text(
-                        'Get OTP',
-                        style: TextStyle(
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.black,
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+            // Main content scrollable to avoid overflow
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 130),
+                    Image.asset('lib/assets/logo.png', height: 120),
+                    const SizedBox(height: 40),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 9),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Verify your mobile number',
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Enter your mobile number',
+                        hintStyle: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 14,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[900],
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _postPhoneNumber,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromARGB(255, 26, 164, 143),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text(
+                          'Get OTP',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Bottom row fixed at bottom
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Already have an account? ',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      // TODO: navigate to sign-in page
+                    },
+                    child: const Text(
+                      'Sign in',
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 26, 164, 143),
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text('Already have an account? ',
-                        style: TextStyle(color: Colors.white70)),
-                    Text('Sign in',
-                        style: TextStyle(
-                            color: Color.fromARGB(255, 26, 164, 143),
-                            fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
