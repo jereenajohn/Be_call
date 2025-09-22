@@ -32,7 +32,7 @@ class _HomepageState extends State<Homepage> {
     // index 1  -> Calls
     const DialerPage(), // index 2
     const CallReport(), // index 3
-    const SettingsPage(), // index 4
+    const SettingsPage(),
   ];
 
   void _onItemTapped(int index) {
