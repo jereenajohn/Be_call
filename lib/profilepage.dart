@@ -113,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     _settingsTile(
                       icon: Icons.star,
-                      label: 'Starred',
+                      label: 'Stared',
                       onTap: () {},
                     ),
                     const Divider(color: Colors.black54, height: 1),
