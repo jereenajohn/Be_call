@@ -2,7 +2,8 @@ import 'package:be_call/call_report.dart';
 import 'package:be_call/homepage.dart';
 import 'package:be_call/profilepage.dart';
 import 'package:flutter/material.dart';
-
+import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 class DialerPage extends StatefulWidget {
   const DialerPage({super.key});
 
@@ -74,7 +75,23 @@ class _DialerPageState extends State<DialerPage> {
       ),
     );
   }
-
+Future<bool> _ensureCallPermission() async {
+  var status = await Permission.phone.status;
+  if (!status.isGranted) {
+    status = await Permission.phone.request();
+  }
+  return status.isGranted;
+}
+Future<void> _makeDirectCall(String number) async {
+  if (await _ensureCallPermission()) {
+    final Uri telUri = Uri(scheme: 'tel', path: number);
+    await launchUrl(telUri); // with CALL_PHONE permission → starts call directly
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Call permission denied')),
+    );
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -133,9 +150,16 @@ class _DialerPageState extends State<DialerPage> {
                     ),
                   const SizedBox(height: 20),
                   GestureDetector(
-                    onTap: () {
-                      // Place call logic
-                    },
+                  onTap: () {
+  if (enteredNumber.isNotEmpty) {
+    _makeDirectCall(enteredNumber);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please enter a number')),
+    );
+  }
+},
+
                     child: CircleAvatar(
                       radius: 35,
                       backgroundColor: const Color.fromARGB(255, 26, 164, 143),
