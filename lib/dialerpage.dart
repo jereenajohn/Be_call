@@ -4,6 +4,8 @@ import 'package:be_call/profilepage.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
+
 class DialerPage extends StatefulWidget {
   const DialerPage({super.key});
 
@@ -26,37 +28,35 @@ class _DialerPageState extends State<DialerPage> {
     }
   }
 
-    int _selectedIndex=1; // Contacts is default
+  int _selectedIndex = 1; // Contacts is default
 
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
 
-    if (index == 2) { // Keypad tapped
+    if (index == 2) {
+      // Keypad tapped
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const DialerPage()),
       );
-    }
-    else if (index == 3) { 
-        Navigator.push(
+    } else if (index == 3) {
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const CallReport()),
       );
-    }
-     else if (index == 1) { 
-        Navigator.push(
+    } else if (index == 1) {
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const Homepage()),
       );
-    }
-    else if (index == 4) { 
-        Navigator.push(
+    } else if (index == 4) {
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const SettingsPage()),
-      );// Reports tapped
+      ); // Reports tapped
       // Navigate to Reports page if implemented
-    }
-    else if (index == 4) { // Settings tapped
+    } else if (index == 4) {
+      // Settings tapped
       // Navigate to Settings page if implemented
     }
     // you can add more conditions for other tabs if needed
@@ -75,23 +75,25 @@ class _DialerPageState extends State<DialerPage> {
       ),
     );
   }
-Future<bool> _ensureCallPermission() async {
-  var status = await Permission.phone.status;
-  if (!status.isGranted) {
-    status = await Permission.phone.request();
+
+  Future<bool> _ensureCallPermission() async {
+    var status = await Permission.phone.status;
+    if (!status.isGranted) {
+      status = await Permission.phone.request();
+    }
+    return status.isGranted;
   }
-  return status.isGranted;
-}
-Future<void> _makeDirectCall(String number) async {
-  if (await _ensureCallPermission()) {
-    final Uri telUri = Uri(scheme: 'tel', path: number);
-    await launchUrl(telUri); // with CALL_PHONE permission → starts call directly
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Call permission denied')),
-    );
+
+  Future<void> _makeDirectCall(String number) async {
+    if (await _ensureCallPermission()) {
+      await FlutterPhoneDirectCaller.callNumber(number);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Call permission denied')),
+      );
+    }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,16 +152,15 @@ Future<void> _makeDirectCall(String number) async {
                     ),
                   const SizedBox(height: 20),
                   GestureDetector(
-                  onTap: () {
-  if (enteredNumber.isNotEmpty) {
-    _makeDirectCall(enteredNumber);
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please enter a number')),
-    );
-  }
-},
-
+                    onTap: () {
+                      if (enteredNumber.isNotEmpty) {
+                        _makeDirectCall(enteredNumber);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter a number')),
+                        );
+                      }
+                    },
                     child: CircleAvatar(
                       radius: 35,
                       backgroundColor: const Color.fromARGB(255, 26, 164, 143),
@@ -194,3 +195,6 @@ Future<void> _makeDirectCall(String number) async {
     );
   }
 }
+
+// AndroidManifest.xml
+// <uses-permission android:name="android.permission.CALL_PHONE"/>
