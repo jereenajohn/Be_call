@@ -1,22 +1,29 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("org.jetbrains.kotlin.android")   // Kotlin DSL plugin id
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// --- Load key.properties ---
+val keystoreProperties = Properties()
+val keystoreFile = rootProject.file("key.properties")
+if (keystoreFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystoreFile))
 }
 
 android {
     namespace = "com.example.be_call"
     compileSdk = flutter.compileSdkVersion
 
-    // ✅ Force the highest NDK required by plugins
     ndkVersion = "27.0.12077973"
 
-    // ✅ Enable Java 8+ features and desugaring
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-        isCoreLibraryDesugaringEnabled = true      // <- important
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -24,16 +31,27 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.be_call"
+        applicationId = "com.be_call.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
+        }
+    }
+
     buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
@@ -43,6 +61,5 @@ flutter {
 }
 
 dependencies {
-    // ✅ Add the desugaring library for Java 8+ support
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
