@@ -15,7 +15,7 @@ if (keystoreFile.exists()) {
 }
 
 android {
-    namespace = "com.example.be_call"
+    namespace = "com.be_call.app"
     compileSdk = flutter.compileSdkVersion
 
     ndkVersion = "27.0.12077973"

@@ -89,7 +89,7 @@ class _DialerPageState extends State<DialerPage> {
       await FlutterPhoneDirectCaller.callNumber(number);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Call permission denied')),
+        const SnackBar(content: Text('Call permissions denied')),
       );
     }
   }
@@ -155,7 +155,7 @@ class _DialerPageState extends State<DialerPage> {
                     onTap: () {
                       if (enteredNumber.isNotEmpty) {
                         _makeDirectCall(enteredNumber);
-                      } else {
+                      } else { 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Please enter a number')),
                         );
