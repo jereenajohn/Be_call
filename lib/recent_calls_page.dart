@@ -37,44 +37,49 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     });
   }
 
-  Future<void> _loadCalls() async {
-    if (await Permission.phone.request().isGranted &&
-        await Permission.contacts.request().isGranted) {
-      final entries = await CallLog.get();
-      final Map<String, _GroupedCall> bucket = {};
+ Future<void> _loadCalls() async {
+  if (await Permission.phone.request().isGranted &&
+      await Permission.contacts.request().isGranted) {
+    final entries = await CallLog.get();
+    final Map<String, _GroupedCall> bucket = {};
 
-      for (final e in entries) {
-        if (e.timestamp == null || e.number == null) continue;
-        final dt = DateTime.fromMillisecondsSinceEpoch(e.timestamp!);
-        final dayKey = DateTime(dt.year, dt.month, dt.day);
-        final numKey = _normalize(e.number!);
-        final key = '$numKey|$dayKey';
+    for (final e in entries) {
+      if (e.timestamp == null || e.number == null) continue;
+      final dt = DateTime.fromMillisecondsSinceEpoch(e.timestamp!);
+      final dayKey = DateTime(dt.year, dt.month, dt.day);
+      final numKey = _normalize(e.number!);
+      final key = '$numKey|$dayKey';
 
-        bucket.putIfAbsent(
-          key,
-          () => _GroupedCall(
-            number: numKey,
-            name: e.name ?? e.number ?? 'Unknown',
-            date: dayKey,
-            lastTime: dt,
-          ),
-        );
+      // create if absent
+      bucket.putIfAbsent(
+        key,
+        () => _GroupedCall(
+          number: numKey,
+          name: e.name ?? e.number ?? 'Unknown',
+          date: dayKey,
+          lastTime: dt,
+          callType: e.callType ?? CallType.incoming, // default
+        ),
+      );
 
-        final g = bucket[key]!;
-        if (dt.isAfter(g.lastTime)) g.lastTime = dt;
-        if ((g.name == 'Unknown' || g.name == null) && e.name != null) {
-          g.name = e.name!;
-        }
+      final g = bucket[key]!;
+      if (dt.isAfter(g.lastTime)) {
+        g.lastTime = dt;
+        g.callType = e.callType ?? CallType.incoming; // update to most recent call type
       }
-
-      final list = bucket.values.toList()
-        ..sort((a, b) => b.lastTime.compareTo(a.lastTime));
-      setState(() {
-        _allCalls = list;
-        _filteredCalls = list;
-      });
+      if ((g.name == 'Unknown' || g.name == null) && e.name != null) {
+        g.name = e.name!;
+      }
     }
+
+    final list = bucket.values.toList()
+      ..sort((a, b) => b.lastTime.compareTo(a.lastTime));
+    setState(() {
+      _allCalls = list;
+      _filteredCalls = list;
+    });
   }
+}
 
   String _normalize(String n) {
     final digits = n.replaceAll(RegExp(r'\D'), '');
@@ -141,50 +146,58 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                     itemBuilder: (context, i) {
                       final c = _filteredCalls[i];
                       return ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Colors.white10,
-                          child: Icon(Icons.person, color: Colors.white),
-                        ),
-                        title: Text(
-  (c.name != null && c.name!.trim().isNotEmpty) ? c.name! : c.number,
-  style: const TextStyle(
-    color: Colors.white,
-    fontWeight: FontWeight.w500,
-    fontSize: 16,
+  leading: const CircleAvatar(
+    backgroundColor: Colors.white10,
+    child: Icon(Icons.person, color: Colors.white),
   ),
-),
+  // Put name + arrow in a Row
+  title: Row(
+    children: [
+      Expanded(
+        child: Text(
+          (c.name != null && c.name!.trim().isNotEmpty) ? c.name! : c.number,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      const SizedBox(width: 8),
+      _callTypeIcon(c.callType), // <-- arrow icon here
+    ],
+  ),
+  subtitle: const Text(
+    'Phone',
+    style: TextStyle(color: Colors.white54),
+  ),
+  trailing: Column(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text(
+        _dateLabel(c.date),
+        style: const TextStyle(color: Colors.white, fontSize: 14),
+      ),
+      Text(
+        _timeLabel(c.lastTime),
+        style: const TextStyle(color: Colors.white54, fontSize: 13),
+      ),
+    ],
+  ),
+  onTap: () => Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CustomerDetailsView(
+        customerName: c.name ?? c.number,
+        phoneNumber: c.number,
+        date: c.lastTime,
+      ),
+    ),
+  ),
+);
 
-                        subtitle: const Text(
-                          'Phone',
-                          style: TextStyle(color: Colors.white54),
-                        ),
-                        trailing: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _dateLabel(c.date),
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 14),
-                            ),
-                            Text(
-                              _timeLabel(c.lastTime),
-                              style: const TextStyle(
-                                  color: Colors.white54, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CustomerDetailsView(
-                              customerName: c.name ?? c.number,
-                              phoneNumber: c.number,
-                              date: c.lastTime,
-                            ),
-                          ),
-                        ),
-                      );
                     },
                   ),
           ),
@@ -199,10 +212,26 @@ class _GroupedCall {
   String? name;
   final DateTime date;
   DateTime lastTime;
+  CallType callType; // NEW
+
   _GroupedCall({
     required this.number,
     required this.name,
     required this.date,
     required this.lastTime,
+    required this.callType,
   });
+}
+Icon _callTypeIcon(CallType type) {
+  const double iconSize = 13; // choose any size you like
+  switch (type) {
+    case CallType.outgoing:
+      return const Icon(Icons.call_made, color: Colors.green, size: iconSize);
+    case CallType.incoming:
+      return const Icon(Icons.call_received, color: Colors.blue, size: iconSize);
+    case CallType.missed:
+      return const Icon(Icons.call_missed, color: Colors.red, size: iconSize);
+    default:
+      return const Icon(Icons.call, color: Colors.grey, size: iconSize);
+  }
 }
