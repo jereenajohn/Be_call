@@ -1,3 +1,5 @@
+import 'package:be_call/Contact_list.dart';
+import 'package:be_call/add_contact.dart';
 import 'package:be_call/call_report.dart';
 import 'package:be_call/dialerpage.dart';
 import 'package:be_call/homepage.dart';
@@ -112,9 +114,23 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   children: [
                     _settingsTile(
+                      icon: Icons.person_2,
+                      label: 'Contacts',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ContactsListPage()),
+                        );  
+                      },
+                    ),
+                                        const Divider(color: Colors.black54, height: 1),
+
+                    _settingsTile(
                       icon: Icons.star,
                       label: 'Stared',
-                      onTap: () {},
+                      onTap: () {
+                       
+                      },
                     ),
                     const Divider(color: Colors.black54, height: 1),
                     _settingsTile(
