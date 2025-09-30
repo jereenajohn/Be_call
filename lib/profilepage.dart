@@ -1,9 +1,14 @@
 import 'package:be_call/Contact_list.dart';
 import 'package:be_call/add_contact.dart';
+import 'package:be_call/add_contry.dart';
+import 'package:be_call/add_state.dart';
+import 'package:be_call/add_state_cubit.dart';
 import 'package:be_call/call_report.dart';
+import 'package:be_call/countries_cubit.dart';
 import 'package:be_call/dialerpage.dart';
 import 'package:be_call/homepage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -121,6 +126,41 @@ class _SettingsPageState extends State<SettingsPage> {
                           context,
                           MaterialPageRoute(builder: (_) => const ContactsListPage()),
                         );  
+                      },
+                    ),
+                                        const Divider(color: Colors.black54, height: 1),
+                                         _settingsTile(
+                      icon: Icons.person_2,
+                      label: 'States',
+                      onTap: () {
+                    Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => AddStateCubit()),
+        BlocProvider(create: (_) => CountriesCubit()..fetchCountries()),
+      ],
+      child: const AddstateFormPage(),
+    ),
+  ),
+);
+
+
+                      },
+                    ),
+
+                       const Divider(color: Colors.black54, height: 1),
+
+                    _settingsTile(
+                      icon: Icons.star,
+                      label: 'Contries',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AddContryFormPage()),
+                        );
+                       
                       },
                     ),
                                         const Divider(color: Colors.black54, height: 1),
