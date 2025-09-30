@@ -1,0 +1,58 @@
+import 'dart:convert';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:be_call/api.dart'; // your base api string
+
+// ---- States ----
+abstract class CountriesState {}
+class CountriesInitial extends CountriesState {}
+class CountriesLoading extends CountriesState {}
+class CountriesLoaded extends CountriesState {
+  final List<Map<String, dynamic>> countries;
+  CountriesLoaded(this.countries);
+}
+class CountriesError extends CountriesState {
+  final String error;
+  CountriesError(this.error);
+}
+
+// ---- Cubit ----
+class CountriesCubit extends Cubit<CountriesState> {
+  CountriesCubit() : super(CountriesInitial());
+
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
+  Future<void> fetchCountries() async {
+    emit(CountriesLoading());
+    try {
+      final token = await _getToken();
+      final url = Uri.parse('$api/api/countries/');
+      final res = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+print(res.statusCode);
+print(res.body);
+      if (res.statusCode == 200) {
+        final List data = jsonDecode(res.body);
+        // expecting [{"id":1,"name":"India"}, ...]
+        final countries = data.map<Map<String, dynamic>>((e) => {
+          "id": e["id"],
+          "name": e["name"],
+        }).toList();
+        emit(CountriesLoaded(countries));
+      } else {
+        emit(CountriesError('Failed: ${res.statusCode}'));
+      }
+    } catch (e) {
+      emit(CountriesError('Error: $e'));
+    }
+  }
+}

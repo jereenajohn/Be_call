@@ -1,4 +1,5 @@
 import 'package:be_call/homepage.dart';
+import 'package:be_call/login_page.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
@@ -22,7 +23,7 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/': (context) => const Homepage(),
+        '/': (context) => const LoginPage(),
         '/dialer': (context) => const Homepage(),
       },
     );

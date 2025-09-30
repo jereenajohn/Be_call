@@ -1,6 +1,8 @@
+import 'package:be_call/api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-
+import 'package:http/http.dart' as https;
+import 'package:shared_preferences/shared_preferences.dart';
 class AddContactFormPage extends StatefulWidget {
   const AddContactFormPage({super.key});
 
@@ -17,6 +19,10 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
 
   final Color accent = const Color.fromARGB(255, 26, 164, 143);
 
+Future <String?> getToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
   Future<void> _saveContact() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -49,6 +55,43 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
     _lastNameCtrl.clear();
     _phoneCtrl.clear();
     _emailCtrl.clear();
+
+var token = await getToken();
+    try{
+      var response= await https.post(Uri.parse("$api/api/customers/"),
+      headers: {
+        "Authorization":'Bearer $token',
+      },
+      body:{
+        "first_name":_firstNameCtrl.text,
+        "last_name":_lastNameCtrl.text,
+        "phone":_phoneCtrl.text,
+        "email":_emailCtrl.text,
+        'state':"1"
+      }
+      );
+      print(response.statusCode);
+      print(response.body);
+      if(response.statusCode==201 || response.statusCode==200){
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('Contact saved successfully!'), backgroundColor: accent),
+        );
+        _formKey.currentState?.reset();
+        _firstNameCtrl.clear();
+        _lastNameCtrl.clear();
+        _phoneCtrl.clear();
+        _emailCtrl.clear();
+      }
+      else{
+         ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to save. Code: ${response.statusCode}"), backgroundColor: Colors.red),
+        );
+      }
+
+    }
+    catch(e){
+      print(e);
+    }
   }
 
   InputDecoration _inputDecoration(String label) => InputDecoration(
