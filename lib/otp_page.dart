@@ -35,12 +35,15 @@ class _OtpPageState extends State<OtpPage> {
         Uri.parse('$api/api/otp/verify/'),
         body: {"otp": enteredOtp, "phone": widget.phoneNumber},
       );
-
+print(response.statusCode);
+print(response.body);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', data['access']);
         await prefs.setString('refresh_token', data['refresh']);
+        await prefs.setString('id', data['user']['id'].toString());
+
 
         final bool firstTime = data['first_time'] == true;
 
@@ -67,6 +70,7 @@ class _OtpPageState extends State<OtpPage> {
         );
       }
     } catch (e) {
+      print(e);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Colors.red,

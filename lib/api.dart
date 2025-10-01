@@ -1,1 +1,1 @@
-var api="https://cool-ducks-make.loca.lt/";
+var api="https://gentle-pugs-open.loca.lt";
