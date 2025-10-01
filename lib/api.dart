@@ -1,1 +1,1 @@
-var api="https://anybody-essential-gateway-chosen.trycloudflare.com/";
+var api="https://cool-ducks-make.loca.lt/";
