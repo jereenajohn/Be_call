@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:be_call/api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
@@ -23,6 +25,39 @@ Future <String?> getToken() async {
     return prefs.getString('access_token');
   }
 
+@override
+void initState() {
+  super.initState();
+  _fetchCountries();
+}
+
+  List<dynamic> _countries = [];
+bool _loading = true;
+
+Future<void> _fetchCountries() async {
+  var token = await getToken();
+  setState(() => _loading = true);
+  try {
+    var response = await https.get(
+      Uri.parse("$api/api/countries/"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      setState(() {
+        _countries = List<dynamic>.from(jsonDecode(response.body));
+        _loading = false;
+      });
+    } else {
+      setState(() => _loading = false);
+      print("Failed to load countries: ${response.statusCode}");
+    }
+  } catch (e) {
+    setState(() => _loading = false);
+    print("Error: $e");
+  }
+}
+
+
   Future<void> _saveCountry() async {
     var token = await getToken();
     try{
@@ -45,6 +80,7 @@ Future <String?> getToken() async {
         _formKey.currentState?.reset();
         _NameCtrl.clear();
         _codeCtrl.clear();
+          _fetchCountries(); // refresh list
       }
       else{
          ScaffoldMessenger.of(context).showSnackBar(
@@ -125,6 +161,31 @@ Future <String?> getToken() async {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
+
+              const SizedBox(height: 20),
+Text(
+  "Countries:",
+  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+),
+const SizedBox(height: 8),
+
+_loading
+    ? const Center(child: CircularProgressIndicator())
+    : _countries.isEmpty
+        ? const Text("No countries found", style: TextStyle(color: Colors.white))
+        : Column(
+            children: _countries.map((c) {
+              return Card(
+                color: Colors.grey[900],
+                child: ListTile(
+                  title: Text(c['name'], style: const TextStyle(color: Colors.white)),
+                  subtitle: Text("Code: ${c['code']}",
+                      style: TextStyle(color: Colors.white70)),
+                ),
+              );
+            }).toList(),
+          ),
+
             ],
           ),
         ),

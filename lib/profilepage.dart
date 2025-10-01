@@ -2,7 +2,7 @@ import 'package:be_call/Contact_list.dart';
 import 'package:be_call/add_contact.dart';
 import 'package:be_call/add_contry.dart';
 import 'package:be_call/add_state.dart';
-import 'package:be_call/add_state_cubit.dart';
+import 'package:be_call/add_state_cubit.dart' hide AddStateCubit;
 import 'package:be_call/call_report.dart';
 import 'package:be_call/countries_cubit.dart';
 import 'package:be_call/dialerpage.dart';
@@ -139,7 +139,8 @@ class _SettingsPageState extends State<SettingsPage> {
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => AddStateCubit()),
-        BlocProvider(create: (_) => CountriesCubit()..fetchCountries()),
+    BlocProvider(create: (_) => CountriesCubit()),
+    BlocProvider(create: (_) => StatesCubit()),
       ],
       child: const AddstateFormPage(),
     ),

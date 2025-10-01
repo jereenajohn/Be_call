@@ -1,22 +1,23 @@
 import 'dart:convert';
 
-import 'package:be_call/add_state.dart';
 import 'package:be_call/api.dart';
-import 'package:be_call/update_contact.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:http/http.dart' as https;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'StatesCubit.dart'; // adjust path if needed
 
-class AddContactFormPage extends StatefulWidget {
-  const AddContactFormPage({super.key});
+
+class updateContactFormPage extends StatefulWidget {
+  var id;
+   updateContactFormPage({super.key,required this.id});
 
   @override
-  State<AddContactFormPage> createState() => _AddContactFormPageState();
+  State<updateContactFormPage> createState() => _updateContactFormPageState();
 }
 
-class _AddContactFormPageState extends State<AddContactFormPage> {
+class _updateContactFormPageState extends State<updateContactFormPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _firstNameCtrl = TextEditingController();
   final TextEditingController _lastNameCtrl  = TextEditingController();
@@ -24,7 +25,6 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
   final TextEditingController _emailCtrl     = TextEditingController();
 
   final Color accent = const Color.fromARGB(255, 26, 164, 143);
-String? _selectedState; // holds chosen state ID
 
 Future <String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -34,7 +34,9 @@ Future <String?> getToken() async {
 void initState() {
   super.initState();
   _fetchCustomers();
+  _fetchidCustomers() ;
 }
+String? _selectedState; // to store chosen state
 
   List<dynamic> _customers = [];
 bool _loading = true;
@@ -63,16 +65,50 @@ Future<void> _fetchCustomers() async {
     print("Error: $e");
   }
 }
+Future<void> _fetchidCustomers() async {
+  var token = await getToken();
+  setState(() => _loading = true);
+
+  try {
+    var response = await https.get(
+      Uri.parse("$api/api/customers/${widget.id}/"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print(response.statusCode);
+    print("response.body${response.body}");
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        _customers = [data]; // wrap single object in a list
+        _loading = false;
+      });
+
+      // prefill form controllers
+      _firstNameCtrl.text = data['first_name'] ?? "";
+      _lastNameCtrl.text  = data['last_name'] ?? "";
+      _phoneCtrl.text     = data['phone'] ?? "";
+      _emailCtrl.text     = data['email'] ?? "";
+      _selectedState = data['state']?.toString();
+
+    } else {
+      setState(() => _loading = false);
+      print("Failed to load customer: ${response.statusCode}");
+    }
+  } catch (e) {
+    setState(() => _loading = false);
+    print("Error: $e");
+  }
+}
 
   Future<void> _saveContact() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (!await FlutterContacts.requestPermission()) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contacts permission denied')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Contacts permission denied')),
+      );
       return;
     }
 
@@ -99,58 +135,43 @@ Future<void> _fetchCustomers() async {
     _phoneCtrl.clear();
     _emailCtrl.clear();
      _fetchCustomers(); // refresh list
+
 var token = await getToken();
-try {
-  print("_firstNameCtrl.text.trim()${_firstNameCtrl.text.trim()}");
-  print("_lastNameCtrl.text.trim()${_lastNameCtrl.text.trim()}"); 
-  print("_phoneCtrl.text.trim()${_phoneCtrl.text.trim()}");
-  print("_emailCtrl.text.trim()${_emailCtrl.text.trim()}");
-  print("_selectedState${_selectedState}");
-  var response = await https.post(
-    Uri.parse("$api/api/customers/"),
-    headers: {
-      "Authorization": "Bearer $token",
-      "Content-Type": "application/json",   // important
-    },
-    body: jsonEncode({
-      "first_name": _firstNameCtrl.text.trim(),
-      "last_name": _lastNameCtrl.text.trim(),
-      "phone": _phoneCtrl.text.trim(),
-      "email": _emailCtrl.text.trim(),
-      "state": "$_selectedState",
-    }),
-  );
+    try{
+      var response= await https.post(Uri.parse("$api/api/customers/"),
+      headers: {
+        "Authorization":'Bearer $token',
+      },
+      body:{
+        "first_name":_firstNameCtrl.text,
+        "last_name":_lastNameCtrl.text,
+        "phone":_phoneCtrl.text,
+        "email":_emailCtrl.text,
+        'state':"1"
+      }
+      );
+      print(response.statusCode);
+      print(response.body);
+      if(response.statusCode==201 || response.statusCode==200){
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('Contact saved successfully!'), backgroundColor: accent),
+        );
+        _formKey.currentState?.reset();
+        _firstNameCtrl.clear();
+        _lastNameCtrl.clear();
+        _phoneCtrl.clear();
+        _emailCtrl.clear();
+      }
+      else{
+         ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to save. Code: ${response.statusCode}"), backgroundColor: Colors.red),
+        );
+      }
 
-  print(response.statusCode);
-  print(response.body);
-
-  if (response.statusCode == 201 || response.statusCode == 200) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Contact saved successfully!'),
-        backgroundColor: accent,
-      ),
-    );
-
-    // only clear after success
-    _formKey.currentState?.reset();
-    _firstNameCtrl.clear();
-    _lastNameCtrl.clear();
-    _phoneCtrl.clear();
-    _emailCtrl.clear();
-    _fetchCustomers();
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Failed to save. Code: ${response.statusCode}"),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-} catch (e) {
-  print(e);
-}
-
+    }
+    catch(e){
+      print(e);
+    }
   }
 
   InputDecoration _inputDecoration(String label) => InputDecoration(
@@ -214,7 +235,6 @@ try {
                 style: const TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 28),
-              
               BlocBuilder<StatesCubit, StatesState>(
   builder: (context, state) {
     if (state is StatesLoading) {
@@ -239,9 +259,7 @@ try {
           );
         }).toList(),
         onChanged: (value) {
-          setState(() {
-            _selectedState = value;
-          });
+          setState(() => _selectedState = value);
         },
         validator: (v) => v == null ? "Select a state" : null,
       );
@@ -254,8 +272,7 @@ try {
     return const SizedBox.shrink();
   },
 ),
-
-              const SizedBox(height: 28),
+const SizedBox(height: 16),
 
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -287,16 +304,7 @@ _loading
             children: _customers.map((c) {
               return GestureDetector(
                 onTap: () {
-                 Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => BlocProvider(
-      create: (_) => StatesCubit()..fetchStates(),
-      child: updateContactFormPage(id: c['id']),
-    ),
-  ),
-);
-
+                  
 
                 },
                 child: Card(

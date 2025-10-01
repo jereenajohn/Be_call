@@ -1,6 +1,8 @@
 import 'package:be_call/add_contact.dart';
+import 'package:be_call/add_state.dart';
 import 'package:be_call/customer_details_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 
@@ -75,10 +77,15 @@ class _ContactsListPageState extends State<ContactsListPage> {
             tooltip: 'Add Contact',
             onPressed: () async {
               // Navigate to AddContactFormPage
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddContactFormPage()),
-              );
+              final result = await  Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => BlocProvider(
+      create: (_) => StatesCubit()..fetchStates(),
+      child: const AddContactFormPage(),
+    ),
+  ),
+);
               // After returning, refresh contacts
               if (result != null) _loadContacts();
             },
