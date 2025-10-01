@@ -1,335 +1,268 @@
 import 'dart:convert';
 
+import 'package:be_call/add_state.dart';
 import 'package:be_call/api.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:http/http.dart' as https;
+import 'package:flutter_bloc/flutter_bloc.dart'; // 👈 needed for BlocBuilder
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'StatesCubit.dart'; // adjust path if needed
+import 'package:http/http.dart' as https;
 
 
-class updateContactFormPage extends StatefulWidget {
-  var id;
-   updateContactFormPage({super.key,required this.id});
+class UpdateContact extends StatefulWidget {
+  final int id;
+  const UpdateContact({super.key, required this.id});
 
   @override
-  State<updateContactFormPage> createState() => _updateContactFormPageState();
+  State<UpdateContact> createState() => _UpdateContactState();
 }
 
-class _updateContactFormPageState extends State<updateContactFormPage> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _firstNameCtrl = TextEditingController();
-  final TextEditingController _lastNameCtrl  = TextEditingController();
-  final TextEditingController _phoneCtrl     = TextEditingController();
-  final TextEditingController _emailCtrl     = TextEditingController();
+class _UpdateContactState extends State<UpdateContact> {
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
 
-  final Color accent = const Color.fromARGB(255, 26, 164, 143);
+  int? _selectedState; // 👈 should be int, not String
+  List<dynamic> _customers = [];
 
-Future <String?> getToken() async {
+  @override
+  void initState() {
+    super.initState();
+    print("Contact ID: ${widget.id}");
+    _fetchCustomers();
+  }
+
+  Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('access_token');
   }
-@override
-void initState() {
-  super.initState();
-  _fetchCustomers();
-  _fetchidCustomers() ;
-}
-String? _selectedState; // to store chosen state
 
-  List<dynamic> _customers = [];
-bool _loading = true;
+  Future<void> _fetchCustomers() async {
+    var token = await getToken();
 
-Future<void> _fetchCustomers() async {
-  var token = await getToken();
-  setState(() => _loading = true);
-
-  try {
-    var response = await https.get(
-      Uri.parse("$api/api/customers/"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    if (response.statusCode == 200) {
-      setState(() {
-        _customers = List<dynamic>.from(jsonDecode(response.body));
-        _loading = false;
-      });
-    } else {
-      setState(() => _loading = false);
-      print("Failed to load customers: ${response.statusCode}");
-    }
-  } catch (e) {
-    setState(() => _loading = false);
-    print("Error: $e");
-  }
-}
-Future<void> _fetchidCustomers() async {
-  var token = await getToken();
-  setState(() => _loading = true);
-
-  try {
-    var response = await https.get(
-      Uri.parse("$api/api/customers/${widget.id}/"),
-      headers: {"Authorization": "Bearer $token"},
-    );
-
-    print(response.statusCode);
-    print("response.body${response.body}");
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      setState(() {
-        _customers = [data]; // wrap single object in a list
-        _loading = false;
-      });
-
-      // prefill form controllers
-      _firstNameCtrl.text = data['first_name'] ?? "";
-      _lastNameCtrl.text  = data['last_name'] ?? "";
-      _phoneCtrl.text     = data['phone'] ?? "";
-      _emailCtrl.text     = data['email'] ?? "";
-      _selectedState = data['state']?.toString();
-
-    } else {
-      setState(() => _loading = false);
-      print("Failed to load customer: ${response.statusCode}");
-    }
-  } catch (e) {
-    setState(() => _loading = false);
-    print("Error: $e");
-  }
-}
-
-  Future<void> _saveContact() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (!await FlutterContacts.requestPermission()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contacts permission denied')),
+    try {
+      var response = await https.get(
+        Uri.parse("$api/api/customers/${widget.id}/"),
+        headers: {"Authorization": "Bearer $token"},
       );
-      return;
+
+      print("$api/api/customers/${widget.id}/");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> customer = jsonDecode(response.body);
+        print("Fetched customer data: $customer");
+
+        setState(() {
+          _firstNameCtrl.text = customer["first_name"] ?? "";
+          _lastNameCtrl.text = customer["last_name"] ?? "";
+          _phoneCtrl.text = customer["phone"] ?? "";
+          _emailCtrl.text = customer["email"] ?? "";
+          _selectedState = customer["state"]; // 👈 now int, works with dropdown
+        });
+      } else {
+        print("Failed to load customer: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
     }
+  }
 
-    final contact = Contact()
-      ..name.first = _firstNameCtrl.text.trim()
-      ..name.last  = _lastNameCtrl.text.trim()
-      ..phones     = [Phone(_phoneCtrl.text.trim())]
-      ..emails     = _emailCtrl.text.trim().isNotEmpty
-          ? [Email(_emailCtrl.text.trim())]
-          : [];
 
-    await FlutterContacts.insertContact(contact);
+ Future<void> _updateCustomer() async {
+  var token = await getToken();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Contact saved successfully!'),
-        backgroundColor: accent,
-      ),
-    );
+  try {
+    final url = Uri.parse("$api/api/customers/${widget.id}/");
 
-    _formKey.currentState!.reset();
-    _firstNameCtrl.clear();
-    _lastNameCtrl.clear();
-    _phoneCtrl.clear();
-    _emailCtrl.clear();
-     _fetchCustomers(); // refresh list
+    final body = jsonEncode({
+      "first_name": _firstNameCtrl.text.trim(),
+      "last_name": _lastNameCtrl.text.trim(),
+      "phone": _phoneCtrl.text.trim(),
+      "email": _emailCtrl.text.trim(),
+      "state": _selectedState, // send state id
+    });
 
-var token = await getToken();
-    try{
-      var response= await https.post(Uri.parse("$api/api/customers/"),
+    final response = await https.put(
+      url,
       headers: {
-        "Authorization":'Bearer $token',
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
       },
-      body:{
-        "first_name":_firstNameCtrl.text,
-        "last_name":_lastNameCtrl.text,
-        "phone":_phoneCtrl.text,
-        "email":_emailCtrl.text,
-        'state':"1"
-      }
-      );
-      print(response.statusCode);
-      print(response.body);
-      if(response.statusCode==201 || response.statusCode==200){
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Contact saved successfully!'), backgroundColor: accent),
-        );
-        _formKey.currentState?.reset();
-        _firstNameCtrl.clear();
-        _lastNameCtrl.clear();
-        _phoneCtrl.clear();
-        _emailCtrl.clear();
-      }
-      else{
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to save. Code: ${response.statusCode}"), backgroundColor: Colors.red),
-        );
-      }
+      body: body,
+    );
 
+    if (!mounted) return; // ✅ ensure widget still in tree
+
+    if (response.statusCode == 200) {
+      print("✅ Customer updated: ${response.body}");
+      Navigator.pop(context, true); // return success to previous page
+    } else {
+      print("❌ Failed to update: ${response.body}");
+      Navigator.pop(context, false); // return failure
     }
-    catch(e){
-      print(e);
+  } catch (e) {
+    print("⚠️ Error: $e");
+    if (mounted) {
+      Navigator.pop(context, false);
     }
   }
+}
 
-  InputDecoration _inputDecoration(String label) => InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.5),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        filled: true,
-        fillColor: Colors.grey[900],
-      );
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Add New Contact'),
         backgroundColor: Colors.black,
         elevation: 0,
+        title: const Text("Update Contact", style: TextStyle(color: Colors.white)),
         centerTitle: true,
-        foregroundColor: Colors.white,
-        
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _firstNameCtrl,
-                decoration: _inputDecoration('First Name'),
-                validator: (v) => v!.isEmpty ? 'Enter first name' : null,
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _lastNameCtrl,
-                decoration: _inputDecoration('Last Name'),
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneCtrl,
-                decoration: _inputDecoration('Phone Number'),
-                keyboardType: TextInputType.phone,
-                validator: (v) => v!.isEmpty ? 'Enter phone number' : null,
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailCtrl,
-                decoration: _inputDecoration('Email (optional)'),
-                keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 28),
-              BlocBuilder<StatesCubit, StatesState>(
-  builder: (context, state) {
-    if (state is StatesLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      );
-    } else if (state is StatesLoaded) {
-      final states = state.states;
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTextField("First Name", _firstNameCtrl),
+            const SizedBox(height: 12),
+            _buildTextField("Last Name", _lastNameCtrl),
+            const SizedBox(height: 12),
+            _buildTextField("Phone Number", _phoneCtrl, keyboard: TextInputType.phone),
+            const SizedBox(height: 12),
+            _buildTextField("Email (optional)", _emailCtrl,
+                keyboard: TextInputType.emailAddress),
+            const SizedBox(height: 12),
+            _buildDropdown(),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.tealAccent[700],
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  ),
+  onPressed: _updateCustomer, // 👈 call update
+  child: const Text(
+    "Update Contact",
+    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  ),
+),
 
-      return DropdownButtonFormField<String>(
-        value: _selectedState,
-        decoration: _inputDecoration("Select State"),
-        dropdownColor: Colors.grey[900],
-        style: const TextStyle(color: Colors.white),
-        items: states.map<DropdownMenuItem<String>>((s) {
-          return DropdownMenuItem<String>(
-            value: s['id'].toString(),
-            child: Text(
-              s['name'],
-              style: const TextStyle(color: Colors.white),
             ),
-          );
-        }).toList(),
-        onChanged: (value) {
-          setState(() => _selectedState = value);
-        },
-        validator: (v) => v == null ? "Select a state" : null,
-      );
-    } else if (state is StatesError) {
-      return Text(
-        state.error,
-        style: const TextStyle(color: Colors.red),
-      );
-    }
-    return const SizedBox.shrink();
-  },
-),
-const SizedBox(height: 16),
+            const SizedBox(height: 20),
+            const Text(
+              "Saved Contacts:",
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            const SizedBox(height: 10),
+            _buildSavedContactCard(name: "CUSTOMER 1 null", phone: "8760000001"),
+            _buildSavedContactCard(
+                name: "testttti tt", phone: "9658253412", email: "testti@gmail.com"),
+          ],
+        ),
+      ),
+    );
+  }
 
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: accent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  elevation: 6,
-                ),
-                onPressed: _saveContact,
-                child: const Text(
-                  'Save Contact',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+  Widget _buildTextField(String hint, TextEditingController controller,
+      {TextInputType keyboard = TextInputType.text}) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboard,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.grey),
+        filled: true,
+        fillColor: Colors.black,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.white54),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.tealAccent),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown() {
+    return BlocBuilder<StatesCubit, StatesState>(
+      builder: (context, state) {
+        if (state is StatesLoading) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is StatesLoaded) {
+          final states = state.states;
+
+          return DropdownButtonFormField<int>(
+            dropdownColor: Colors.black,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.black,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.white54),
               ),
-              const SizedBox(height: 20),
-Text(
-  "Saved Contacts:",
-  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-),
-const SizedBox(height: 8),
-
-_loading
-    ? const Center(child: CircularProgressIndicator())
-    : _customers.isEmpty
-        ? const Text("No contacts found", style: TextStyle(color: Colors.white))
-        : Column(
-            children: _customers.map((c) {
-              return GestureDetector(
-                onTap: () {
-                  
-
-                },
-                child: Card(
-                  color: Colors.grey[900],
-                  child: ListTile(
-                    leading: const Icon(Icons.person, color: Colors.white),
-                    title: Text("${c['first_name']} ${c['last_name']}",
-                        style: const TextStyle(color: Colors.white)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Phone: ${c['phone']}", style: const TextStyle(color: Colors.white70)),
-                        if (c['email'] != null && c['email'].toString().isNotEmpty)
-                          Text("Email: ${c['email']}", style: const TextStyle(color: Colors.white70)),
-                      ],
-                    ),
-                  ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.tealAccent),
+              ),
+            ),
+            hint: const Text("Select State", style: TextStyle(color: Colors.grey)),
+            value: _selectedState, // 👈 works now (int)
+            onChanged: (value) {
+              setState(() => _selectedState = value);
+            },
+            items: states
+                .map<DropdownMenuItem<int>>((s) {
+              return DropdownMenuItem<int>(
+                value: s["id"],
+                child: Text(
+                  s["name"],
+                  style: const TextStyle(color: Colors.white),
                 ),
               );
             }).toList(),
-          ),
+          );
+        } else if (state is StatesError) {
+          return Text(state.error, style: const TextStyle(color: Colors.red));
+        }
+        return const SizedBox();
+      },
+    );
+  }
 
-            ],
-          ),
-        ),
+  Widget _buildSavedContactCard(
+      {required String name, required String phone, String? email}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[900],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.person, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(name,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
+          ]),
+          const SizedBox(height: 6),
+          Text("Phone: $phone", style: const TextStyle(color: Colors.white70)),
+          if (email != null)
+            Text("Email: $email", style: const TextStyle(color: Colors.white70)),
+        ],
       ),
     );
   }

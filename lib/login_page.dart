@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
         body: {"phone": phone},
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 500) {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => OtpPage(phoneNumber: phone)),
