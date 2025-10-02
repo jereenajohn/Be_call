@@ -113,34 +113,33 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-
   // ...existing code...
-Future<void> _updateUserName(int userId, String newName) async {
-  var token = await getToken();
-  try {
-    var response = await https.put(
-      Uri.parse("$api/api/users/$userId/"),
-      headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
-      body: jsonEncode({"name": newName}),
-    );
+  Future<void> _updateUserName(int userId, String newName) async {
+    var token = await getToken();
+    try {
+      var response = await https.put(
+        Uri.parse("$api/api/users/$userId/"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"name": newName}),
+      );
 
-    print("$api/api/users/$userId/");
-    print("Request Body: ${jsonEncode({"name": newName})}");
-    print(  "Response Status: ${response.statusCode}");
-      print(  "Response Body: ${response.body}");
-    if (response.statusCode == 200) {
-      print("Name updated successfully");
-    } else {
-      print("Failed to update name: ${response.statusCode}");
+      print("$api/api/users/$userId/");
+      print("Request Body: ${jsonEncode({"name": newName})}");
+      print("Response Status: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+      if (response.statusCode == 200) {
+        print("Name updated successfully");
+      } else {
+        print("Failed to update name: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error updating name: $e");
     }
-  } catch (e) {
-    print("Error updating name: $e");
   }
-}
-// ...existing code...
+  // ...existing code...
 
   String? _editedName;
 
@@ -153,10 +152,7 @@ Future<void> _updateUserName(int userId, String newName) async {
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.black,
-          title: const Text(
-            'Edit Name',
-            style: TextStyle(color: Colors.white),
-          ),
+          title: const Text('Edit Name', style: TextStyle(color: Colors.white)),
           content: TextField(
             controller: controller,
             style: const TextStyle(color: Colors.white),
@@ -174,7 +170,10 @@ Future<void> _updateUserName(int userId, String newName) async {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -249,7 +248,11 @@ Future<void> _updateUserName(int userId, String newName) async {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.white, size: 18),
+                          icon: const Icon(
+                            Icons.edit,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                           onPressed: _showEditNameDialog,
                           tooltip: 'Edit Name',
                         ),
@@ -275,7 +278,9 @@ Future<void> _updateUserName(int userId, String newName) async {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const ContactsListPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const ContactsListPage(),
+                          ),
                         );
                       },
                     ),
@@ -287,14 +292,19 @@ Future<void> _updateUserName(int userId, String newName) async {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => MultiBlocProvider(
-                              providers: [
-                                BlocProvider(create: (_) => AddStateCubit()),
-                                BlocProvider(create: (_) => CountriesCubit()),
-                                BlocProvider(create: (_) => StatesCubit()),
-                              ],
-                              child: const AddstateFormPage(),
-                            ),
+                            builder:
+                                (_) => MultiBlocProvider(
+                                  providers: [
+                                    BlocProvider(
+                                      create: (_) => AddStateCubit(),
+                                    ),
+                                    BlocProvider(
+                                      create: (_) => CountriesCubit(),
+                                    ),
+                                    BlocProvider(create: (_) => StatesCubit()),
+                                  ],
+                                  child: const AddstateFormPage(),
+                                ),
                           ),
                         );
                       },
@@ -308,7 +318,9 @@ Future<void> _updateUserName(int userId, String newName) async {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AddContryFormPage()),
+                          MaterialPageRoute(
+                            builder: (_) => const AddContryFormPage(),
+                          ),
                         );
                       },
                     ),
@@ -360,17 +372,22 @@ Future<void> _updateUserName(int userId, String newName) async {
   }
 
   // Reusable list tile with teal icon
-  Widget _settingsTile(
-      {required IconData icon,
-      required String label,
-      required VoidCallback onTap}) {
+  Widget _settingsTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       leading: Icon(icon, color: const Color.fromARGB(255, 26, 164, 143)),
       title: Text(
         label,
         style: const TextStyle(color: Colors.white, fontSize: 16),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        color: Colors.white,
+        size: 16,
+      ),
       onTap: onTap,
     );
   }
