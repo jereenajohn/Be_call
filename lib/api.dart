@@ -1,1 +1,1 @@
-var api="https://gentle-pugs-open.loca.lt";
+var api="https://ten-bags-sin.loca.lt";
