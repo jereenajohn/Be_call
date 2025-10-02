@@ -123,23 +123,24 @@ class _UpdateContactState extends State<UpdateContact> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTextField("First Name", _firstNameCtrl),
-            const SizedBox(height: 12),
-            _buildTextField("Last Name", _lastNameCtrl),
-            const SizedBox(height: 12),
-            _buildTextField("Phone Number", _phoneCtrl, keyboard: TextInputType.phone),
-            const SizedBox(height: 12),
-            _buildTextField("Email (optional)", _emailCtrl,
-                keyboard: TextInputType.emailAddress),
-            const SizedBox(height: 12),
-            _buildDropdown(),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTextField("First Name", _firstNameCtrl),
+              const SizedBox(height: 12),
+              _buildTextField("Last Name", _lastNameCtrl),
+              const SizedBox(height: 12),
+              _buildTextField("Phone Number", _phoneCtrl, keyboard: TextInputType.phone),
+              const SizedBox(height: 12),
+              _buildTextField("Email (optional)", _emailCtrl,
+                  keyboard: TextInputType.emailAddress),
+              const SizedBox(height: 12),
+              _buildDropdown(),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
   style: ElevatedButton.styleFrom(
     backgroundColor: Colors.tealAccent[700],
     foregroundColor: Colors.white,
@@ -153,17 +154,18 @@ class _UpdateContactState extends State<UpdateContact> {
   ),
 ),
 
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "Saved Contacts:",
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            _buildSavedContactCard(name: "CUSTOMER 1 null", phone: "8760000001"),
-            _buildSavedContactCard(
-                name: "testttti tt", phone: "9658253412", email: "testti@gmail.com"),
-          ],
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "Saved Contacts:",
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              const SizedBox(height: 10),
+              _buildSavedContactCard(name: "CUSTOMER 1 null", phone: "8760000001"),
+              _buildSavedContactCard(
+                  name: "testttti tt", phone: "9658253412", email: "testti@gmail.com"),
+            ],
+          ),
         ),
       ),
     );

@@ -207,146 +207,150 @@ class _SettingsPageState extends State<SettingsPage> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Settings',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Settings',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 30),
+                const SizedBox(height: 30),
 
-              // Profile icon and text
-              Center(
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: const Color.fromARGB(255, 26, 164, 143),
-                      child: const Icon(
-                        Icons.person,
-                        color: Colors.black,
-                        size: 50,
+                // Profile icon and text
+                Center(
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: const Color.fromARGB(255, 26, 164, 143),
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.black,
+                          size: 50,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _customers.isNotEmpty && _customers[0]['name'] != null
-                              ? _customers[0]['name']
-                              : '',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _customers.isNotEmpty && _customers[0]['name'] != null
+                                ? _customers[0]['name']
+                                : '',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.edit,
-                            color: Colors.white,
-                            size: 18,
+                          IconButton(
+                            icon: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            onPressed: _showEditNameDialog,
+                            tooltip: 'Edit Name',
                           ),
-                          onPressed: _showEditNameDialog,
-                          tooltip: 'Edit Name',
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 40),
+                const SizedBox(height: 40),
 
-              // Settings List
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: BorderRadius.circular(20),
+                // Settings List
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      _settingsTile(
+                        icon: Icons.person_2,
+                        label: 'Contacts',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ContactsListPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(color: Colors.black54, height: 1),
+                      _settingsTile(
+                        icon: Icons.person_2,
+                        label: 'States',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => MultiBlocProvider(
+                                    providers: [
+                                      BlocProvider(
+                                        create: (_) => AddStateCubit(),
+                                      ),
+                                      BlocProvider(
+                                        create: (_) => CountriesCubit(),
+                                      ),
+                                      BlocProvider(
+                                        create: (_) => StatesCubit(),
+                                      ),
+                                    ],
+                                    child: const AddstateFormPage(),
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const Divider(color: Colors.black54, height: 1),
+
+                      _settingsTile(
+                        icon: Icons.star,
+                        label: 'Countries',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AddContryFormPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(color: Colors.black54, height: 1),
+
+                      _settingsTile(
+                        icon: Icons.star,
+                        label: 'Stared',
+                        onTap: () {},
+                      ),
+                      const Divider(color: Colors.black54, height: 1),
+                      _settingsTile(
+                        icon: Icons.favorite,
+                        label: 'Favourite',
+                        onTap: () {},
+                      ),
+                      const Divider(color: Colors.black54, height: 1),
+                      _settingsTile(
+                        icon: Icons.folder,
+                        label: 'Labels',
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    _settingsTile(
-                      icon: Icons.person_2,
-                      label: 'Contacts',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ContactsListPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    const Divider(color: Colors.black54, height: 1),
-                    _settingsTile(
-                      icon: Icons.person_2,
-                      label: 'States',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => MultiBlocProvider(
-                                  providers: [
-                                    BlocProvider(
-                                      create: (_) => AddStateCubit(),
-                                    ),
-                                    BlocProvider(
-                                      create: (_) => CountriesCubit(),
-                                    ),
-                                    BlocProvider(create: (_) => StatesCubit()),
-                                  ],
-                                  child: const AddstateFormPage(),
-                                ),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const Divider(color: Colors.black54, height: 1),
-
-                    _settingsTile(
-                      icon: Icons.star,
-                      label: 'Countries',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AddContryFormPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    const Divider(color: Colors.black54, height: 1),
-
-                    _settingsTile(
-                      icon: Icons.star,
-                      label: 'Stared',
-                      onTap: () {},
-                    ),
-                    const Divider(color: Colors.black54, height: 1),
-                    _settingsTile(
-                      icon: Icons.favorite,
-                      label: 'Favourite',
-                      onTap: () {},
-                    ),
-                    const Divider(color: Colors.black54, height: 1),
-                    _settingsTile(
-                      icon: Icons.folder,
-                      label: 'Labels',
-                      onTap: () {},
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
