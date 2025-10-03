@@ -161,7 +161,7 @@ class _UpdateContactState extends State<UpdateContact> {
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
               const SizedBox(height: 10),
-              _buildSavedContactCard(name: "CUSTOMER 1 null", phone: "8760000001"),
+              _buildSavedContactCard(name: "CUSTOMER 1 null", phone: "8760000011"),
               _buildSavedContactCard(
                   name: "testttti tt", phone: "9658253412", email: "testti@gmail.com"),
             ],
