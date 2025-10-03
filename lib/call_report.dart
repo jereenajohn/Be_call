@@ -147,13 +147,13 @@ class _CallReportState extends State<CallReport> {
         ),
         DataColumn(
           label: Text(
-            'Invoice',
+            'Customer',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,fontSize: 11),
           ),
         ),
         DataColumn(
           label: Text(
-            'Amount',
+            'Call Duration',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,fontSize: 11),
           ),
         ),
