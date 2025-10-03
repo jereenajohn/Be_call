@@ -1,1 +1,1 @@
-var api="https://ten-bags-sin.loca.lt";
+var api="https://fast-houses-occur.loca.lt";
