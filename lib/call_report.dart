@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'package:be_call/api.dart';
+import 'package:be_call/call_detail_page.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CallReport extends StatefulWidget {
   const CallReport({super.key});
@@ -8,98 +13,198 @@ class CallReport extends StatefulWidget {
 }
 
 class _CallReportState extends State<CallReport> {
-  final List<Map<String, dynamic>> activeCalls = List.generate(
-    20,
-    (i) => {'no': i + 1, 'invoice': 'Customer ${i + 1}', 'amount': 1700.0},
-  );
+  List<dynamic> activeCalls = [];
+  List<dynamic> productiveCalls = [];
+  bool isLoading = true;
+  Map<String, dynamic>? userDetails; // Add this to hold user info
 
-  final List<Map<String, dynamic>> productiveCalls = [
-    {'no': 1, 'invoice': 'MC0001', 'amount': 1500.0},
-    {'no': 2, 'invoice': 'MC0002', 'amount': 2500.0},
-    {'no': 3, 'invoice': 'MC0003', 'amount': 1600.0},
-    {'no': 4, 'invoice': 'MC0004', 'amount': 1700.0},
-    {'no': 5, 'invoice': 'MC0005', 'amount': 3000.0},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchCallReports();
+  }
 
-  double get activeTotal =>
-      activeCalls.fold(0.0, (sum, e) => sum + (e['amount'] as double));
-  double get productiveTotal =>
-      productiveCalls.fold(0.0, (sum, e) => sum + (e['amount'] as double));
+  Future<String?> getToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('access_token');
+  }
+
+  Future<int?> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var idValue = prefs.get('id');
+    if (idValue is int) return idValue;
+    if (idValue is String) {
+      return int.tryParse(idValue);
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getUserDetails() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString('user');
+    if (userJson != null) {
+      return json.decode(userJson);
+    }
+    return null;
+  }
+
+  Future<void> fetchCallReports() async {
+    try {
+      var token = await getToken();
+      var userId = await getUserId();
+      var user = await getUserDetails();
+      print("User ID from prefs: $userId");
+      print(token);
+      if (userId == null) {
+        print("No user id found in SharedPreferences");
+        return;
+      }
+
+      // Fetch both Active & Productive Calls
+      final activeResponse = await http.get(
+        Uri.parse('$api/api/call/report/'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      final productiveResponse = await http.get(
+        Uri.parse('$api/api/call/report/?type=productive'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      print('Active response: ${activeResponse.statusCode}');
+      print('Productive response: ${productiveResponse.statusCode}');
+
+      if (activeResponse.statusCode == 200 &&
+          productiveResponse.statusCode == 200) {
+        final activeData = json.decode(activeResponse.body);
+        final productiveData = json.decode(productiveResponse.body);
+
+        setState(() {
+          activeCalls = activeData;
+          productiveCalls = productiveData;
+          userDetails = user;
+          isLoading = false;
+        });
+
+        print(
+            'Fetched ${activeData.length} active calls and ${productiveData.length} productive calls for user ID $userId');
+      } else {
+        setState(() {
+          isLoading = false;
+          userDetails = user;
+        });
+        print(
+            'Error fetching call report: Active=${activeResponse.statusCode}, Productive=${productiveResponse.statusCode}');
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      print('Exception: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Call report',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Overall total calls summary
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 26, 164, 143),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.white))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Total Calls',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                    Text(
-                      '${activeCalls.length}',
-                      style: const TextStyle(
+                      'Call Report',
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // User Info
+                    if (userDetails != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.teal,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Logged in as: ${userDetails!['username'] ?? 'Unknown'}',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 16),
+                            ),
+                            if (userDetails!['email'] != null)
+                              Text(
+                                'Email: ${userDetails!['email']}',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 14),
+                              ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+
+                    // Total Calls Summary
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 26, 164, 143),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Calls',
+                            style:
+                                TextStyle(color: Colors.white, fontSize: 18),
+                          ),
+                          Text(
+                            '${activeCalls.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Active Calls Section
+                    _expandableTable(
+                      title: 'Active Calls',
+                      data: activeCalls,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Productive Calls Section
+                    _expandableTable(
+                      title: 'Productive Calls',
+                      data: productiveCalls.where((call) => call['invoice'] != null && call['invoice_number'].toString().isNotEmpty).toList(),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              _expandableTable(
-                title: 'Active Calls',
-                total: activeTotal,
-                data: activeCalls,
-              ),
-              const SizedBox(height: 16),
-
-              _expandableTable(
-                title: 'Productive Calls',
-                total: productiveTotal,
-                data: productiveCalls,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
   Widget _expandableTable({
     required String title,
-    required double total,
-    required List<Map<String, dynamic>> data,
+    required List<dynamic> data,
   }) {
+    final isProductive = title == 'Productive Calls';
     return Container(
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 26, 164, 143),
@@ -116,7 +221,7 @@ class _CallReportState extends State<CallReport> {
               style: const TextStyle(color: Colors.white, fontSize: 18),
             ),
             Text(
-              '₹${total.toStringAsFixed(0)}',
+              '${data.length}',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -126,81 +231,172 @@ class _CallReportState extends State<CallReport> {
           ],
         ),
         children: [
-  Padding(
-  padding: const EdgeInsets.all(12),
-  child: SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: DataTable(
-      // Dark header color inside the table
-      headingRowColor: MaterialStateProperty.all(const Color(0xFF00695C)),
-      // Square borders: no borderRadius
-      border: TableBorder.all(
-        color: Colors.white,
-        width: 1,
-      ),
-      columns: const [
-        DataColumn(
-          label: Text(
-            'No.',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,fontSize: 11),
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            'Customer',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,fontSize: 11),
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            'Call Duration',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold,fontSize: 11),
-          ),
-        ),
-      ],
-      rows: [
-        // ---- normal data rows ----
-        ...data.map(
-          (e) => DataRow(
-            cells: [
-              DataCell(Text('${e['no']}',
-                  style: const TextStyle(color: Colors.white, fontSize: 10,))),
-              DataCell(Text('${e['invoice']}',
-                  style: const TextStyle(color: Colors.white, fontSize: 10))),
-              DataCell(Text(
-                '₹${(e['amount'] as double).toStringAsFixed(2)}',
-                style: const TextStyle(color: Colors.white, fontSize: 10),
-              )),
-            ],
-          ),
-        ),
-        // ---- Total row with same dark fill ----
-        DataRow(
-          color: MaterialStateProperty.all(const Color(0xFF00695C)),
-          cells: [
-            const DataCell(
-              Text(
-                'Total',
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowColor:
+                    MaterialStateProperty.all(const Color(0xFF00695C)),
+                border: TableBorder.all(color: Colors.white, width: 1),
+                columns: isProductive
+                    ? const [
+                        DataColumn(
+                          label: Text(
+                            'No.',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Invoice',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Amount',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11),
+                          ),
+                        ),
+                      ]
+                    : const [
+                        DataColumn(
+                          label: Text(
+                            'No.',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Customer',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Duration',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11),
+                          ),
+                        ),
+                      ],
+                rows: data.isNotEmpty
+                    ? data.asMap().entries.map((entry) {
+                        final index = entry.key + 1;
+                        final call = entry.value;
+                        return DataRow(
+                          cells: isProductive
+                              ? [
+                                  DataCell(Text(
+                                    '$index',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                  )),
+                                  DataCell(Text(
+                                    call['invoice']?.toString() ?? 'N/A',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                  )),
+                                  DataCell(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          call['amount']?.toString() ?? 'N/A',
+                                          style: const TextStyle(
+                                              color: Colors.white, fontSize: 10),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => CallDetailPage(call: call),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ]
+                              : [
+                                  DataCell(Text(
+                                    '$index',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                  )),
+                                  DataCell(Text(
+                                    call['customer_name'] ?? 'N/A',
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 10),
+                                  )),
+                                  DataCell(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          child: Text(
+                                            call['duration'] ?? 'N/A',
+                                            style: const TextStyle(
+                                                color: Colors.white, fontSize: 10),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => CallDetailPage(call: call),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                        );
+                      }).toList()
+                    : [
+                        DataRow(
+                          cells: isProductive
+                              ? [
+                                  const DataCell(Text('-', style: TextStyle(color: Colors.white))),
+                                  const DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
+                                  const DataCell(Text('-', style: TextStyle(color: Colors.white))),
+                                ]
+                              : [
+                                  const DataCell(Text('-', style: TextStyle(color: Colors.white))),
+                                  const DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
+                                  const DataCell(Text('-', style: TextStyle(color: Colors.white))),
+                                ],
+                        )
+                      ],
               ),
             ),
-            const DataCell(Text('')), // empty middle cell
-            DataCell(
-              Text(
-                '₹${total.toStringAsFixed(0)}',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  ),
-)
-
-
+          )
         ],
       ),
     );
