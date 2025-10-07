@@ -30,7 +30,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
 
   Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return prefs.getString('token');
   }
 
   Future<int?> getUserId() async {
@@ -52,6 +52,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     required String customerName,
     required String duration,
   }) async {
+    print("Preparing to send call report for $customerName, duration: $duration");
     final url = Uri.parse("$api/api/call/report/");
 
     final token = await getToken();
@@ -67,7 +68,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       "customer_name": customerName,
       "duration": duration,
       "status": "Active",
-      "created_by": userName ?? userId?.toString() ?? "Unknown",
+      // "created_by": userName ?? userId?.toString() ?? "Unknown",
     };
 
     try {
@@ -83,7 +84,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       );
 
       print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
+      print("Response body;;;;;;;;;;;;;;;: ${response.body}");
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         print("✅ Call report sent successfully: ${response.body}");
