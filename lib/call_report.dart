@@ -16,7 +16,7 @@ class _CallReportState extends State<CallReport> {
   List<dynamic> activeCalls = [];
   List<dynamic> productiveCalls = [];
   bool isLoading = true;
-  Map<String, dynamic>? userDetails; // Add this to hold user info
+  Map<String, dynamic>? userDetails;
 
   @override
   void initState() {
@@ -29,13 +29,11 @@ class _CallReportState extends State<CallReport> {
     return prefs.getString('access_token');
   }
 
-  Future<int?> getUserId() async {
+  Future<int?> getUserId() async { 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var idValue = prefs.get('id');
     if (idValue is int) return idValue;
-    if (idValue is String) {
-      return int.tryParse(idValue);
-    }
+    if (idValue is String) return int.tryParse(idValue);
     return null;
   }
 
@@ -54,13 +52,13 @@ class _CallReportState extends State<CallReport> {
       var userId = await getUserId();
       var user = await getUserDetails();
       print("User ID from prefs: $userId");
-      print(token);
+      print("Token: $token");
+
       if (userId == null) {
         print("No user id found in SharedPreferences");
         return;
       }
 
-      // Fetch both Active & Productive Calls
       final activeResponse = await http.get(
         Uri.parse('$api/api/call/report/'),
         headers: {'Authorization': 'Bearer $token'},
@@ -72,7 +70,7 @@ class _CallReportState extends State<CallReport> {
       );
 
       print('Active response: ${activeResponse.statusCode}');
-      print('Productive response: ${productiveResponse.statusCode}');
+      print('Productive responseeee: ${productiveResponse.statusCode}');
 
       if (activeResponse.statusCode == 200 &&
           productiveResponse.statusCode == 200) {
@@ -165,8 +163,8 @@ class _CallReportState extends State<CallReport> {
                         children: [
                           const Text(
                             'Total Calls',
-                            style:
-                                TextStyle(color: Colors.white, fontSize: 18),
+                            style: TextStyle(
+                                color: Colors.white, fontSize: 18),
                           ),
                           Text(
                             '${activeCalls.length}',
@@ -181,17 +179,15 @@ class _CallReportState extends State<CallReport> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Active Calls Section
-                    _expandableTable(
-                      title: 'Active Calls',
-                      data: activeCalls,
-                    ),
+                    _expandableTable(title: 'Active Calls', data: activeCalls),
                     const SizedBox(height: 16),
-
-                    // Productive Calls Section
                     _expandableTable(
                       title: 'Productive Calls',
-                      data: productiveCalls.where((call) => call['invoice'] != null && call['invoice_number'].toString().isNotEmpty).toList(),
+                      data: productiveCalls
+                          .where((call) =>
+                              call['invoice'] != null &&
+                              call['invoice_number'].toString().isNotEmpty)
+                          .toList(),
                     ),
                   ],
                 ),
@@ -205,6 +201,60 @@ class _CallReportState extends State<CallReport> {
     required List<dynamic> data,
   }) {
     final isProductive = title == 'Productive Calls';
+
+    // ✅ FIXED FUNCTION
+  String getTotalDuration() {
+  int totalSeconds = 0;
+
+  for (var call in data) {
+    final dynamic duration = call['duration'];
+    if (duration == null) continue;
+
+    // If already a number (seconds)
+    if (duration is num) {
+      totalSeconds += duration.toInt();
+      continue;
+    }
+
+    // Convert to string for parsing
+    final durationStr = duration.toString().trim();
+
+    // Case 1: HH:MM:SS or MM:SS or SS
+    final parts = durationStr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
+
+    if (parts.length == 3) {
+      totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length == 2) {
+      totalSeconds += parts[0] * 60 + parts[1];
+    } else if (parts.length == 1 && parts.first > 0) {
+      totalSeconds += parts.first;
+    }
+  }
+
+  final hours = totalSeconds ~/ 3600;
+  final minutes = (totalSeconds % 3600) ~/ 60;
+  final seconds = totalSeconds % 60;
+
+  return '${hours.toString().padLeft(2, '0')}:'
+      '${minutes.toString().padLeft(2, '0')}:'
+      '${seconds.toString().padLeft(2, '0')}';
+}
+
+    String getTotalAmount() {
+      double total = data.fold<double>(
+        0,
+        (double sum, dynamic call) {
+          final amount = call['amount'];
+          if (amount == null) return sum;
+          return sum +
+              (amount is num
+                  ? amount.toDouble()
+                  : double.tryParse(amount.toString()) ?? 0);
+        },
+      );
+      return total.toStringAsFixed(2);
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 26, 164, 143),
@@ -241,62 +291,14 @@ class _CallReportState extends State<CallReport> {
                 border: TableBorder.all(color: Colors.white, width: 1),
                 columns: isProductive
                     ? const [
-                        DataColumn(
-                          label: Text(
-                            'No.',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Invoice',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Amount',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                        ),
+                        DataColumn(label: Text('No.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
+                        DataColumn(label: Text('Invoice', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
+                        DataColumn(label: Text('Amount', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
                       ]
                     : const [
-                        DataColumn(
-                          label: Text(
-                            'No.',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Customer',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Duration',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11),
-                          ),
-                        ),
+                        DataColumn(label: Text('No.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
+                        DataColumn(label: Text('Customer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
+                        DataColumn(label: Text('Duration', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
                       ],
                 rows: data.isNotEmpty
                     ? data.asMap().entries.map((entry) {
@@ -305,98 +307,85 @@ class _CallReportState extends State<CallReport> {
                         return DataRow(
                           cells: isProductive
                               ? [
-                                  DataCell(Text(
-                                    '$index',
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 10),
+                                  DataCell(Text('$index', style: const TextStyle(color: Colors.white, fontSize: 10))),
+                                  DataCell(Text(call['invoice']?.toString() ?? 'N/A', style: const TextStyle(color: Colors.white, fontSize: 10))),
+                                  DataCell(Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(call['amount']?.toString() ?? 'N/A', style: const TextStyle(color: Colors.white, fontSize: 10)),
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => CallDetailPage(call: call),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   )),
-                                  DataCell(Text(
-                                    call['invoice']?.toString() ?? 'N/A',
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 10),
-                                  )),
-                                  DataCell(
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          call['amount']?.toString() ?? 'N/A',
-                                          style: const TextStyle(
-                                              color: Colors.white, fontSize: 10),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => CallDetailPage(call: call),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ]
                               : [
-                                  DataCell(Text(
-                                    '$index',
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 10),
+                                  DataCell(Text('$index', style: const TextStyle(color: Colors.white, fontSize: 10))),
+                                  DataCell(Text(call['customer_name'] ?? 'N/A', style: const TextStyle(color: Colors.white, fontSize: 10))),
+                                  DataCell(Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        width: 60,
+                                        child: Text(call['duration'] ?? 'N/A', style: const TextStyle(color: Colors.white, fontSize: 10), overflow: TextOverflow.ellipsis),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => CallDetailPage(call: call),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   )),
-                                  DataCell(Text(
-                                    call['customer_name'] ?? 'N/A',
-                                    style: const TextStyle(
-                                        color: Colors.white, fontSize: 10),
-                                  )),
-                                  DataCell(
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          child: Text(
-                                            call['duration'] ?? 'N/A',
-                                            style: const TextStyle(
-                                                color: Colors.white, fontSize: 10),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => CallDetailPage(call: call),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ],
                         );
                       }).toList()
                     : [
                         DataRow(
                           cells: isProductive
-                              ? [
-                                  const DataCell(Text('-', style: TextStyle(color: Colors.white))),
-                                  const DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
-                                  const DataCell(Text('-', style: TextStyle(color: Colors.white))),
+                              ? const [
+                                  DataCell(Text('-', style: TextStyle(color: Colors.white))),
+                                  DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
+                                  DataCell(Text('-', style: TextStyle(color: Colors.white))),
                                 ]
-                              : [
-                                  const DataCell(Text('-', style: TextStyle(color: Colors.white))),
-                                  const DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
-                                  const DataCell(Text('-', style: TextStyle(color: Colors.white))),
+                              : const [
+                                  DataCell(Text('-', style: TextStyle(color: Colors.white))),
+                                  DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
+                                  DataCell(Text('-', style: TextStyle(color: Colors.white))),
                                 ],
                         )
                       ],
               ),
             ),
-          )
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: isProductive
+                  ? Text(
+                      'Total Amount: ₹${getTotalAmount()}',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    )
+                  : Text(
+                      'Total Duration: ${getTotalDuration()}',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+            ),
+          ),
         ],
       ),
     );
