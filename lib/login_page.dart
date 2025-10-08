@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:be_call/admin_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'otp_page.dart';
@@ -38,48 +39,57 @@ Future login(String email, String password, BuildContext context) async {
       var responseData = jsonDecode(response.body);
       var status = responseData['status'];
 
-      // ...existing code...
-if (status == 'success') {
-  var token = responseData['token'];
-  var active = responseData['active'];
-  var name = responseData['name'];
-  var warehouse = responseData['warehouse_id'] ?? 0; // Default to 0 if null
+      if (status == 'success') {
+        var token = responseData['token'];
+        var active = responseData['active'];
+        var name = responseData['name'];
+        var warehouse = responseData['warehouse_id'] ?? 0;
 
-  // Decode JWT token to get user id
-  List<String> parts = token.split('.');
-  if (parts.length == 3) {
-    String payload = parts[1];
-    // Pad the payload if necessary
-    String normalized = base64.normalize(payload);
-    Map<String, dynamic> payloadMap = jsonDecode(utf8.decode(base64.decode(normalized)));
-    print("payloadMap: $payloadMap");
-    var userId = payloadMap['id'];
+        // Decode JWT token to get user id
+        List<String> parts = token.split('.');
+        if (parts.length == 3) {
+          String payload = parts[1];
+          String normalized = base64.normalize(payload);
+          Map<String, dynamic> payloadMap =
+              jsonDecode(utf8.decode(base64.decode(normalized)));
+          print("payloadMap: $payloadMap");
+          var userId = payloadMap['id'];
+          var userRole = payloadMap['active']; // e.g. ADMIN, STAFF, etc.
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token); // Store token
-    await prefs.setString('username', name); // Store user name
-    await prefs.setInt('warehouse_id', warehouse); // Store warehouse ID
-    await prefs.setInt('id', userId); // Store user id
-  }
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', token);
+          await prefs.setString('username', name);
+          await prefs.setInt('warehouse_id', warehouse);
+          await prefs.setInt('id', userId);
+          await prefs.setString('role', userRole);
 
-  Navigator.push(context, MaterialPageRoute(builder: (context) => Homepage()));
+          // ✅ Navigate based on role
+          if (userRole == 'ADMIN') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const Homepage()),
+            );
+          }
+        }
 
-  // Show success message
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(backgroundColor: Colors.green, content: Text('Successfully logged in.')),
-  );
-}
-// ...existing code...
-      
-       else {
-        // Show backend error message if available
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Successfully logged in.'),
+          ),
+        );
+      } else {
         String errorMessage = responseData['message'] ?? 'Login failed.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(backgroundColor: Colors.red, content: Text(errorMessage)),
         );
       }
     } else {
-      // Try to show backend error message if available
       String errorMessage = 'An error occurred. Please try again.';
       try {
         var responseData = jsonDecode(response.body);
@@ -93,10 +103,14 @@ if (status == 'success') {
     }
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(backgroundColor: Colors.red, content: Text('An error occurred. Please try again.')),
+      const SnackBar(
+        backgroundColor: Colors.red,
+        content: Text('An error occurred. Please try again.'),
+      ),
     );
   }
 }
+
   Future<void> _postPhoneNumber() async {
     final phone = phoneController.text.trim();
     if (phone.isEmpty) {
