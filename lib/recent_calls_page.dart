@@ -51,8 +51,11 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
   Future<void> sendCallReport({
     required String customerName,
     required String duration,
+    required String phone,
   }) async {
-    print("Preparing to send call report for $customerName, duration: $duration");
+    print(
+      "Preparing to send call report for $customerName, duration: $duration",
+    );
     final url = Uri.parse("$api/api/call/report/");
 
     final token = await getToken();
@@ -68,7 +71,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       "customer_name": customerName,
       "duration": duration,
       "status": "Active",
-      // "created_by": userName ?? userId?.toString() ?? "Unknown",
+      "phone": phone,
     };
 
     try {
@@ -84,7 +87,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       );
 
       print("Response status: ${response.statusCode}");
-      print("Response body;;;;;;;;;;;;;;;: ${response.body}");
+      print("Response body: ${response.body}");
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         print("✅ Call report sent successfully: ${response.body}");
@@ -99,15 +102,16 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
   void _onSearch() {
     final q = _searchCtrl.text.toLowerCase();
     setState(() {
-      _filteredCalls = q.isEmpty
-          ? _allCalls
-          : _allCalls
-              .where(
-                (c) =>
-                    (c.name ?? '').toLowerCase().contains(q) ||
-                    c.number.toLowerCase().contains(q),
-              )
-              .toList();
+      _filteredCalls =
+          q.isEmpty
+              ? _allCalls
+              : _allCalls
+                  .where(
+                    (c) =>
+                        (c.name ?? '').toLowerCase().contains(q) ||
+                        c.number.toLowerCase().contains(q),
+                  )
+                  .toList();
     });
   }
 
@@ -136,30 +140,37 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
           await sendCallReport(
             customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
             duration: "${lastCall.duration} sec",
+            phone: lastCall.number ?? '', // 👈 Added
           );
+
           await prefs.setString('last_reported_call', callKey);
         } else if (lastCall.callType == CallType.missed) {
           // Missed call
           await sendCallReport(
             customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
             duration: "0 sec",
+            phone: lastCall.number ?? '', // 👈 Added
           );
+
           await prefs.setString('last_reported_call', callKey);
         }
       }
 
       // ✅ Build list for UI
-      final list = entries
-          .map(
-            (e) => _GroupedCall(
-              number: e.number ?? '',
-              name: e.name ?? e.number ?? 'Unknown',
-              date: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
-              lastTime: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
-              callType: e.callType ?? CallType.incoming,
-            ),
-          )
-          .toList();
+      final list =
+          entries
+              .map(
+                (e) => _GroupedCall(
+                  number: e.number ?? '',
+                  name: e.name ?? e.number ?? 'Unknown',
+                  date: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
+                  lastTime: DateTime.fromMillisecondsSinceEpoch(
+                    e.timestamp ?? 0,
+                  ),
+                  callType: e.callType ?? CallType.incoming,
+                ),
+              )
+              .toList();
 
       setState(() {
         _allCalls = list;
@@ -232,79 +243,83 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
               onRefresh: _loadCalls,
               color: Colors.orange,
               backgroundColor: Colors.black,
-              child: _filteredCalls.isEmpty
-                  ? const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    )
-                  : ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: _filteredCalls.length,
-                      separatorBuilder: (_, __) =>
-                          Divider(color: Colors.grey[800], height: 1),
-                      itemBuilder: (context, i) {
-                        final c = _filteredCalls[i];
-                        return ListTile(
-                          leading: const CircleAvatar(
-                            backgroundColor: Colors.white10,
-                            child: Icon(Icons.person, color: Colors.white),
-                          ),
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  (c.name != null &&
-                                          c.name!.trim().isNotEmpty)
-                                      ? c.name!
-                                      : c.number,
+              child:
+                  _filteredCalls.isEmpty
+                      ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
+                      : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _filteredCalls.length,
+                        separatorBuilder:
+                            (_, __) =>
+                                Divider(color: Colors.grey[800], height: 1),
+                        itemBuilder: (context, i) {
+                          final c = _filteredCalls[i];
+                          return ListTile(
+                            leading: const CircleAvatar(
+                              backgroundColor: Colors.white10,
+                              child: Icon(Icons.person, color: Colors.white),
+                            ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    (c.name != null &&
+                                            c.name!.trim().isNotEmpty)
+                                        ? c.name!
+                                        : c.number,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _callTypeIcon(c.callType),
+                              ],
+                            ),
+                            subtitle: const Text(
+                              'Phone',
+                              style: TextStyle(color: Colors.white54),
+                            ),
+                            trailing: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _dateLabel(c.date),
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontWeight: FontWeight.w500,
                                     fontSize: 14,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              _callTypeIcon(c.callType),
-                            ],
-                          ),
-                          subtitle: const Text(
-                            'Phone',
-                            style: TextStyle(color: Colors.white54),
-                          ),
-                          trailing: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                _dateLabel(c.date),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+                                Text(
+                                  _timeLabel(c.lastTime),
+                                  style: const TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 13,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                _timeLabel(c.lastTime),
-                                style: const TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => CustomerDetailsView(
-                                customerName: c.name ?? c.number,
-                                phoneNumber: c.number,
-                                date: c.lastTime,
-                              ),
+                              ],
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => CustomerDetailsView(
+                                          customerName: c.name ?? c.number,
+                                          phoneNumber: c.number,
+                                          date: c.lastTime,
+                                        ),
+                                  ),
+                                ),
+                          );
+                        },
+                      ),
             ),
           ),
         ],
@@ -335,7 +350,11 @@ Icon _callTypeIcon(CallType type) {
     case CallType.outgoing:
       return const Icon(Icons.call_made, color: Colors.green, size: iconSize);
     case CallType.incoming:
-      return const Icon(Icons.call_received, color: Colors.blue, size: iconSize);
+      return const Icon(
+        Icons.call_received,
+        color: Colors.blue,
+        size: iconSize,
+      );
     case CallType.missed:
       return const Icon(Icons.call_missed, color: Colors.red, size: iconSize);
     default:
