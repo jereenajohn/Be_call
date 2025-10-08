@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'package:be_call/api.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as https;
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -8,48 +12,110 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
+  List<dynamic> _customers = [];
+  String? _username;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUser();
+    _loadUserName();
+  }
+
+  Future<int?> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var idValue = prefs.get('id');
+    if (idValue is int) return idValue;
+    if (idValue is String) {
+      return int.tryParse(idValue);
+    }
+    return null;
+  }
+
+  Future<String?> getToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  Future<void> _loadUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _username = prefs.getString('username') ?? 'Admin';
+    });
+  }
+
+  Future<void> _fetchUser() async {
+    var token = await getToken();
+    var userId = await getUserId();
+    if (userId == null) {
+      print("No user id found in SharedPreferences");
+      return;
+    }
+
+    try {
+      var response = await https.get(
+        Uri.parse("$api/api/users/$userId/"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _customers = [jsonDecode(response.body)];
+        });
+      } else {
+        print("Failed to load user: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color bgColor = Colors.black;
-    const Color accentColor = Color(0xFF00B8B8);
 
     return Scaffold(
       backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 26, 164, 143),
-        elevation: 4,
-        shadowColor: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.4),
-        title: const Text(
-          'ADMIN DASHBOARD',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.3,
-            fontSize: 18,
-          ),
+     appBar: AppBar(
+  backgroundColor: const Color.fromARGB(255, 26, 164, 143),
+  elevation: 4,
+  shadowColor: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.4),
+  automaticallyImplyLeading: false, // hides default back arrow
+  titleSpacing: 16, // add padding from left edge
+  title: const Text(
+    'BE CALL',
+    style: TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.3,
+      fontSize: 18,
+    ),
+  ),
+  centerTitle: false, // ✅ aligns title to the left
+  actions: const [
+    Padding(
+      padding: EdgeInsets.only(right: 16),
+      child: CircleAvatar(
+        radius: 18,
+        backgroundColor: Colors.white,
+        child: Icon(
+          Icons.person,
+          color: Color.fromARGB(255, 26, 164, 143),
         ),
-        centerTitle: true,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Color.fromARGB(255, 26, 164, 143)),
-            ),
-          ),
-        ],
       ),
+    ),
+  ],
+),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Greeting / Header
-            const Text(
-              "Welcome Back, Admin 👋",
-              style: TextStyle(
+            // Greeting
+            Text(
+              "Welcome back, ${_username ?? 'Admin'} 👋",
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -57,102 +123,87 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
             const SizedBox(height: 25),
 
-            // Top Summary Cards
+            // Summary Cards
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoCard(Icons.people, "Users", "1,250"),
-                _buildInfoCard(Icons.shopping_bag, "Orders", "390"),
-                _buildInfoCard(Icons.show_chart, "Sales", "1,045"),
+                _buildInfoCard(Icons.people, "Staffs", "70"),
+                _buildInfoCard(Icons.receipt_long_rounded, "Invoices", "390"),
+                _buildInfoCard(Icons.call, "Calls", "550"),
               ],
             ),
-
             const SizedBox(height: 30),
 
-            // Overview Section
-            _buildSectionTitle("Overview"),
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.grey[900]!,
-                    Colors.grey[850]!,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  const Icon(Icons.show_chart,
-                      color: Color.fromARGB(255, 26, 164, 143), size: 60),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Monthly Performance Graph",
-                    style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    height: 5,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2),
-                      gradient: const LinearGradient(
-                        colors: [Color.fromARGB(255, 26, 164, 143), Color.fromARGB(255, 26, 164, 143)],
-                      ),
-                    ),
-                  )
-                ],
-              ),
+            // Staff Performance Table
+         // Staff Performance Overview Section
+_buildSectionTitle("Staff Performance Overview",),
+const SizedBox(height: 10),
+Container(
+  width: double.infinity,
+  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+  decoration: BoxDecoration(
+    gradient: const LinearGradient(
+      colors: [Color(0xFF0E0E0E), Color(0xFF1A1A1A)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ),
+    borderRadius: BorderRadius.circular(18),
+    boxShadow: [
+      BoxShadow(
+        color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.25),
+        blurRadius: 10,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  ),
+  child: Column(
+    children: [
+      // Header Row
+      Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color.fromARGB(255, 26, 164, 143),
+              Color.fromARGB(255, 18, 110, 96)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.4),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: const [
+            _HeaderText(icon: Icons.person_outline, label: "Staff"),
+            _HeaderText(icon: Icons.access_time, label: "Total Duration"),
+            _HeaderText(icon: Icons.call, label: "Productive Calls"),
+            _HeaderText(icon: Icons.currency_rupee, label: "Total Amount"),
+          ],
+        ),
+      ),
+      const SizedBox(height: 6),
+
+      // Data Rows
+      _FancyRow("John Doe", "3h 40m", "42", "₹15,600", false),
+      _FancyRow("Jane Smith", "2h 10m", "27", "₹9,800", true),
+      _FancyRow("Michael Brown", "4h 25m", "53", "₹18,400", false),
+      _FancyRow("Emily White", "1h 55m", "21", "₹7,250", true),
+    ],
+  ),
+),
 
             const SizedBox(height: 30),
 
-            // Recent Orders Section
-            _buildSectionTitle("Recent Orders"),
-            const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.2),
-                    blurRadius: 8,
-                  )
-                ],
-              ),
-              child: Column(
-                children: [
-                  _buildTableHeader(),
-                  const Divider(color: Colors.white10, thickness: 1),
-                  _buildOrderRow("#1234", "04/05/2024", "John Doe"),
-                  _buildOrderRow("#1233", "04/05/2024", "Jane Smith"),
-                  _buildOrderRow("#1232", "04/04/2024", "Michael Brown"),
-                  _buildOrderRow("#1231", "04/03/2024", "John Doe"),
-                  _buildOrderRow("#1230", "04/02/2024", "Jane Smith"),
-                  _buildOrderRow("#1243", "04/01/2024", "Emily White"),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Account Summary Section
-            _buildSectionTitle("Account Summary"),
+            // Financial Summary
+            _buildSectionTitle("Financial Summary"),
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(16),
@@ -161,18 +212,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.2),
+                    color: const Color.fromARGB(255, 26, 164, 143)
+                        .withOpacity(0.2),
                     blurRadius: 8,
                   )
                 ],
               ),
-              child: Column(
-                children: const [
-                  _AccountRow(label: "Total Balance", amount: "\$199.00"),
+              child: const Column(
+                children: [
+                  _AccountRow(label: "Total Invoice Amount", amount: "₹54,000"),
                   SizedBox(height: 12),
-                  _AccountRow(label: "Pending Payout", amount: "\$99.99"),
-                  SizedBox(height: 12),
-                  _AccountRow(label: "Transactions", amount: "45"),
                 ],
               ),
             ),
@@ -183,7 +232,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // Reusable Widgets
+  // 🔹 Info Card Widget
   Widget _buildInfoCard(IconData icon, String label, String value) {
     return Expanded(
       child: Container(
@@ -192,30 +241,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF101010),
-              Color(0xFF1A1A1A),
-            ],
+            colors: [Color(0xFF101010), Color(0xFF1A1A1A)],
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.teal.withOpacity(0.2),
+              color: Colors.teal.withOpacity(0.25),
               blurRadius: 6,
               offset: const Offset(0, 3),
-            )
+            ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: const Color.fromARGB(255, 26, 164, 143), size: 32),
+            Icon(icon,
+                color: const Color.fromARGB(255, 26, 164, 143), size: 32),
             const SizedBox(height: 10),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 6),
             Text(
@@ -232,55 +276,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  // 🔹 Section Title Widget
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
       style: const TextStyle(
         color: Color.fromARGB(255, 26, 164, 143),
         fontWeight: FontWeight.bold,
-        fontSize: 18,
-      ),
-    );
-  }
-
-  Widget _buildTableHeader() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text("ID",
-              style: TextStyle(color: Colors.white70, fontSize: 14)),
-          Text("Date",
-              style: TextStyle(color: Colors.white70, fontSize: 14)),
-          Text("Customer",
-              style: TextStyle(color: Colors.white70, fontSize: 14)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrderRow(String id, String date, String customer) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(id,
-              style:
-                  const TextStyle(color: Colors.white, fontSize: 14)),
-          Text(date,
-              style:
-                  const TextStyle(color: Colors.white, fontSize: 14)),
-          Text(customer,
-              style:
-                  const TextStyle(color: Colors.white, fontSize: 14)),
-        ],
+        fontSize: 15,
       ),
     );
   }
 }
 
+// 🔹 Financial Summary Row
 class _AccountRow extends StatelessWidget {
   final String label;
   final String amount;
@@ -299,6 +308,95 @@ class _AccountRow extends StatelessWidget {
               fontWeight: FontWeight.bold,
             )),
       ],
+    );
+  }
+}
+
+class _HeaderText extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _HeaderText({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              letterSpacing: 0.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FancyRow extends StatelessWidget {
+  final String staff;
+  final String duration;
+  final String calls;
+  final String amount;
+  final bool isEven;
+
+  const _FancyRow(
+      this.staff, this.duration, this.calls, this.amount, this.isEven,
+      {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+      decoration: BoxDecoration(
+        color: isEven ? const Color(0xFF151515) : const Color(0xFF101010),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          if (!isEven)
+            BoxShadow(
+              color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.08),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _DataText(staff),
+          _DataText(duration),
+          _DataText(calls),
+          _DataText(amount),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataText extends StatelessWidget {
+  final String text;
+  const _DataText(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     );
   }
 }
