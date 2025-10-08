@@ -69,7 +69,20 @@ Future login(String email, String password, BuildContext context) async {
               context,
               MaterialPageRoute(builder: (_) => const AdminDashboard()),
             );
-          } else {
+          }
+           else if (userRole == 'CEO') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            );
+          }
+            else if (userRole == 'COO') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            );
+          }
+           else {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => const Homepage()),
