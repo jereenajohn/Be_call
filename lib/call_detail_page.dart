@@ -48,7 +48,7 @@ class _CallDetailPageState extends State<CallDetailPage> {
 
   Future<void> updateCallDetails(Map<String, dynamic> updatedData) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('access_token');
+    String? token = prefs.getString('token');
     final callId = widget.call['id'];
 
     if (token == null || callId == null) {

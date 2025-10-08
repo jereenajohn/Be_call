@@ -26,7 +26,7 @@ class _CallReportState extends State<CallReport> {
 
   Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return prefs.getString('token');
   }
 
   Future<int?> getUserId() async { 
