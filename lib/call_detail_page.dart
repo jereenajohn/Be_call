@@ -25,12 +25,22 @@ class _CallDetailPageState extends State<CallDetailPage> {
   @override
   void initState() {
     super.initState();
-    customerNameController = TextEditingController(text: widget.call['customer_name'] ?? '');
-    durationController = TextEditingController(text: widget.call['duration'] ?? '');
+    customerNameController = TextEditingController(
+      text: widget.call['customer_name'] ?? '',
+    );
+    durationController = TextEditingController(
+      text: widget.call['duration'] ?? '',
+    );
     phoneController = TextEditingController(text: widget.call['phone'] ?? '');
-    invoiceController = TextEditingController(text: widget.call['invoice'] ?? '');
-    amountController = TextEditingController(text: widget.call['amount']?.toString() ?? '');
-    descriptionController = TextEditingController(text: widget.call['description'] ?? '');
+    invoiceController = TextEditingController(
+      text: widget.call['invoice'] ?? '',
+    );
+    amountController = TextEditingController(
+      text: widget.call['amount']?.toString() ?? '',
+    );
+    descriptionController = TextEditingController(
+      text: widget.call['description'] ?? '',
+    );
     noteController = TextEditingController(text: widget.call['note'] ?? '');
   }
 
@@ -46,20 +56,46 @@ class _CallDetailPageState extends State<CallDetailPage> {
     super.dispose();
   }
 
-  Future<void> updateCallDetails(Map<String, dynamic> updatedData) async {
+  /// 🔹 Update call details API
+  Future<void> updateCallDetails() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
     final callId = widget.call['id'];
 
     if (token == null || callId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Missing token or call ID")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Missing token or call ID")));
       return;
     }
 
+    // 🔹 Add current date
+    final now = DateTime.now();
+    final formattedDate =
+        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+    // 🔹 Build updated data payload
+    final Map<String, dynamic> updatedData = {
+      'customer_name': customerNameController.text,
+      'duration': durationController.text,
+      'phone': phoneController.text.isEmpty ? null : phoneController.text,
+      'invoice': invoiceController.text,
+      'amount': amountController.text,
+      'description': descriptionController.text,
+      'note': noteController.text,
+      'date': formattedDate,
+    };
+
+    // ✅ Automatically set status to "Productive" if invoice added
+    if (invoiceController.text.trim().isNotEmpty) {
+      updatedData['status'] = 'Productive';
+    }
+
     final url = Uri.parse("$api/api/call/report/$callId/");
+
     try {
+      print("Updating call at $url with data: $updatedData");
+
       final response = await http.put(
         url,
         headers: {
@@ -68,12 +104,17 @@ class _CallDetailPageState extends State<CallDetailPage> {
         },
         body: jsonEncode(updatedData),
       );
-      print("Updating call at $url with data: $updatedData");
+
       print("Response status: ${response.statusCode}");
       print("Response body: ${response.body}");
+
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Call updated successfully")),
+          SnackBar(
+            content: Text(invoiceController.text.trim().isNotEmpty
+                ? "✅ Call marked as Productive"
+                : "Call updated successfully"),
+          ),
         );
         Navigator.pop(context, true);
       } else {
@@ -82,9 +123,9 @@ class _CallDetailPageState extends State<CallDetailPage> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error occurred while updating")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
@@ -137,24 +178,7 @@ class _CallDetailPageState extends State<CallDetailPage> {
               const SizedBox(height: 20),
               Center(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    if (phoneController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Phone number cannot be blank")),
-                      );
-                      return;
-                    }
-                    final updatedData = {
-                      'customer_name': customerNameController.text,
-                      'duration': durationController.text,
-                      'phone': phoneController.text,
-                      'invoice': invoiceController.text,
-                      'amount': amountController.text,
-                      'description': descriptionController.text,
-                      'note': noteController.text,
-                    };
-                    updateCallDetails(updatedData);
-                  },
+                  onPressed: updateCallDetails, // ✅ simplified
                   icon: const Icon(Icons.save, color: Colors.white),
                   label: const Text(
                     "Update Call",
@@ -202,7 +226,10 @@ class _CallDetailPageState extends State<CallDetailPage> {
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: Colors.white24),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
           ),
         ],

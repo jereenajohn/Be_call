@@ -13,6 +13,10 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   List<dynamic> _customers = [];
+  int totalRecords = 0;
+  int productiveCount = 0;
+  double totalAmount = 0.0;
+
   String? _username;
 
   @override
@@ -20,6 +24,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     super.initState();
     _fetchUser();
     _loadUserName();
+    _fetchDashboardSummary();
   }
 
   Future<int?> getUserId() async {
@@ -42,6 +47,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
     setState(() {
       _username = prefs.getString('username') ?? 'Admin';
     });
+  }
+
+  Future<void> _fetchDashboardSummary() async {
+    var token = await getToken();
+
+    try {
+      final response = await https.get(
+        Uri.parse("$api/api/call/report/summary/"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          totalRecords = data['total_records'] ?? 0;
+          productiveCount = data['productive_count'] ?? 0;
+          totalAmount = data['total_amount'] ?? 0.0;
+        });
+      } else {
+        print("❌ Failed to load dashboard data: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("⚠️ Error fetching dashboard data: $e");
+    }
   }
 
   Future<void> _fetchUser() async {
@@ -76,36 +106,36 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     return Scaffold(
       backgroundColor: bgColor,
-     appBar: AppBar(
-  backgroundColor: const Color.fromARGB(255, 26, 164, 143),
-  elevation: 4,
-  shadowColor: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.4),
-  automaticallyImplyLeading: false, // hides default back arrow
-  titleSpacing: 16, // add padding from left edge
-  title: const Text(
-    'BE CALL',
-    style: TextStyle(
-      color: Colors.white,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 1.3,
-      fontSize: 18,
-    ),
-  ),
-  centerTitle: false, // ✅ aligns title to the left
-  actions: const [
-    Padding(
-      padding: EdgeInsets.only(right: 16),
-      child: CircleAvatar(
-        radius: 18,
-        backgroundColor: Colors.white,
-        child: Icon(
-          Icons.person,
-          color: Color.fromARGB(255, 26, 164, 143),
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 26, 164, 143),
+        elevation: 4,
+        shadowColor: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.4),
+        automaticallyImplyLeading: false, // hides default back arrow
+        titleSpacing: 16, // add padding from left edge
+        title: const Text(
+          'BE CALL',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.3,
+            fontSize: 18,
+          ),
         ),
+        centerTitle: false, // ✅ aligns title to the left
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.white,
+              child: Icon(
+                Icons.person,
+                color: Color.fromARGB(255, 26, 164, 143),
+              ),
+            ),
+          ),
+        ],
       ),
-    ),
-  ],
-),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -128,77 +158,104 @@ class _AdminDashboardState extends State<AdminDashboard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildInfoCard(Icons.people, "Staffs", "70"),
-                _buildInfoCard(Icons.receipt_long_rounded, "Invoices", "390"),
-                _buildInfoCard(Icons.call, "Calls", "550"),
+                _buildInfoCard(
+                  Icons.receipt_long_rounded,
+                  "Invoices",
+                  "$productiveCount",
+                ),
+                _buildInfoCard(Icons.call, "Calls", "$totalRecords"),
               ],
             ),
+
             const SizedBox(height: 30),
 
             // Staff Performance Table
-         // Staff Performance Overview Section
-_buildSectionTitle("Staff Performance Overview",),
-const SizedBox(height: 10),
-Container(
-  width: double.infinity,
-  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-  decoration: BoxDecoration(
-    gradient: const LinearGradient(
-      colors: [Color(0xFF0E0E0E), Color(0xFF1A1A1A)],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    ),
-    borderRadius: BorderRadius.circular(18),
-    boxShadow: [
-      BoxShadow(
-        color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.25),
-        blurRadius: 10,
-        offset: const Offset(0, 4),
-      ),
-    ],
-  ),
-  child: Column(
-    children: [
-      // Header Row
-      Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color.fromARGB(255, 26, 164, 143),
-              Color.fromARGB(255, 18, 110, 96)
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.4),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: const [
-            _HeaderText(icon: Icons.person_outline, label: "Staff"),
-            _HeaderText(icon: Icons.access_time, label: "Total Duration"),
-            _HeaderText(icon: Icons.call, label: "Productive Calls"),
-            _HeaderText(icon: Icons.currency_rupee, label: "Total Amount"),
-          ],
-        ),
-      ),
-      const SizedBox(height: 6),
+            // Staff Performance Overview Section
+            _buildSectionTitle("Staff Performance Overview"),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0E0E0E), Color(0xFF1A1A1A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color.fromARGB(
+                      255,
+                      26,
+                      164,
+                      143,
+                    ).withOpacity(0.25),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  // Header Row
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color.fromARGB(255, 26, 164, 143),
+                          Color.fromARGB(255, 18, 110, 96),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            255,
+                            26,
+                            164,
+                            143,
+                          ).withOpacity(0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: const [
+                        _HeaderText(icon: Icons.person_outline, label: "Staff"),
+                        _HeaderText(
+                          icon: Icons.access_time,
+                          label: "Total Duration",
+                        ),
+                        _HeaderText(
+                          icon: Icons.call,
+                          label: "Productive Calls",
+                        ),
+                        _HeaderText(
+                          icon: Icons.currency_rupee,
+                          label: "Total Amount",
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
 
-      // Data Rows
-      _FancyRow("John Doe", "3h 40m", "42", "₹15,600", false),
-      _FancyRow("Jane Smith", "2h 10m", "27", "₹9,800", true),
-      _FancyRow("Michael Brown", "4h 25m", "53", "₹18,400", false),
-      _FancyRow("Emily White", "1h 55m", "21", "₹7,250", true),
-    ],
-  ),
-),
+                  // Data Rows
+                  _FancyRow("John Doe", "3h 40m", "42", "₹15,600", false),
+                  _FancyRow("Jane Smith", "2h 10m", "27", "₹9,800", true),
+                  _FancyRow("Michael Brown", "4h 25m", "53", "₹18,400", false),
+                  _FancyRow("Emily White", "1h 55m", "21", "₹7,250", true),
+                ],
+              ),
+            ),
 
             const SizedBox(height: 30),
 
@@ -212,19 +269,27 @@ Container(
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color.fromARGB(255, 26, 164, 143)
-                        .withOpacity(0.2),
+                    color: const Color.fromARGB(
+                      255,
+                      26,
+                      164,
+                      143,
+                    ).withOpacity(0.2),
                     blurRadius: 8,
-                  )
+                  ),
                 ],
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  _AccountRow(label: "Total Invoice Amount", amount: "₹54,000"),
-                  SizedBox(height: 12),
+                  _AccountRow(
+                    label: "Total Invoice Amount",
+                    amount: "₹${totalAmount.toStringAsFixed(2)}",
+                  ),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
+
             const SizedBox(height: 40),
           ],
         ),
@@ -254,8 +319,11 @@ Container(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                color: const Color.fromARGB(255, 26, 164, 143), size: 32),
+            Icon(
+              icon,
+              color: const Color.fromARGB(255, 26, 164, 143),
+              size: 32,
+            ),
             const SizedBox(height: 10),
             Text(
               label,
@@ -302,11 +370,13 @@ class _AccountRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.white)),
-        Text(amount,
-            style: const TextStyle(
-              color: Color.fromARGB(255, 26, 164, 143),
-              fontWeight: FontWeight.bold,
-            )),
+        Text(
+          amount,
+          style: const TextStyle(
+            color: Color.fromARGB(255, 26, 164, 143),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
@@ -348,8 +418,13 @@ class _FancyRow extends StatelessWidget {
   final bool isEven;
 
   const _FancyRow(
-      this.staff, this.duration, this.calls, this.amount, this.isEven,
-      {super.key});
+    this.staff,
+    this.duration,
+    this.calls,
+    this.amount,
+    this.isEven, {
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

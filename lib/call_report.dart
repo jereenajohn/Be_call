@@ -29,7 +29,7 @@ class _CallReportState extends State<CallReport> {
     return prefs.getString('token');
   }
 
-  Future<int?> getUserId() async { 
+  Future<int?> getUserId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var idValue = prefs.get('id');
     if (idValue is int) return idValue;
@@ -71,6 +71,7 @@ class _CallReportState extends State<CallReport> {
 
       print('Active response: ${activeResponse.statusCode}');
       print('Productive responseeee: ${productiveResponse.statusCode}');
+      print('Productive responseeee: ${productiveResponse.body}');
 
       if (activeResponse.statusCode == 200 &&
           productiveResponse.statusCode == 200) {
@@ -85,14 +86,16 @@ class _CallReportState extends State<CallReport> {
         });
 
         print(
-            'Fetched ${activeData.length} active calls and ${productiveData.length} productive calls for user ID $userId');
+          'Fetched ${activeData.length} active calls and ${productiveData.length} productive calls for user ID $userId',
+        );
       } else {
         setState(() {
           isLoading = false;
           userDetails = user;
         });
         print(
-            'Error fetching call report: Active=${activeResponse.statusCode}, Productive=${productiveResponse.statusCode}');
+          'Error fetching call report: Active=${activeResponse.statusCode}, Productive=${productiveResponse.statusCode}',
+        );
       }
     } catch (e) {
       setState(() => isLoading = false);
@@ -105,164 +108,207 @@ class _CallReportState extends State<CallReport> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Colors.white))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Call Report',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // User Info
-                    if (userDetails != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.teal,
-                          borderRadius: BorderRadius.circular(12),
+        child:
+            isLoading
+                ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+                : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Call Report',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Logged in as: ${userDetails!['username'] ?? 'Unknown'}',
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 16),
-                            ),
-                            if (userDetails!['email'] != null)
+                      ),
+                      const SizedBox(height: 10),
+
+                      // User Info
+                      if (userDetails != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.teal,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                'Email: ${userDetails!['email']}',
+                                'Logged in as: ${userDetails!['username'] ?? 'Unknown'}',
                                 style: const TextStyle(
-                                    color: Colors.white, fontSize: 14),
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
                               ),
+                              if (userDetails!['email'] != null)
+                                Text(
+                                  'Email: ${userDetails!['email']}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 20),
+
+                      // Total Calls Summary
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 26, 164, 143),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Total Calls',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                            ),
+                            Text(
+                              '${activeCalls.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                    // Total Calls Summary
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 26, 164, 143),
-                        borderRadius: BorderRadius.circular(20),
+                      _expandableTable(
+                        title: 'Active Calls',
+                        data:
+                            activeCalls.where((call) {
+                              final d =
+                                  call['duration']
+                                      ?.toString()
+                                      .trim()
+                                      .toLowerCase() ??
+                                  '';
+                              if (d.isEmpty) return false;
+                              if (d == '0' ||
+                                  d == '0 sec' ||
+                                  d == '0s' ||
+                                  d == '00:00' ||
+                                  d == '00:00:00')
+                                return false;
+                              return true;
+                            }).toList(),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total Calls',
-                            style: TextStyle(
-                                color: Colors.white, fontSize: 18),
-                          ),
-                          Text(
-                            '${activeCalls.length}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 16),
+                      _expandableTable(
+                        title: 'Productive Calls',
+                        data:
+                            productiveCalls
+                                .where(
+                                  (call) =>
+                                      call['invoice'] != null &&
+                                      call['invoice_number']
+                                          .toString()
+                                          .isNotEmpty,
+                                )
+                                .toList(),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    _expandableTable(title: 'Active Calls', data: activeCalls),
-                    const SizedBox(height: 16),
-                    _expandableTable(
-                      title: 'Productive Calls',
-                      data: productiveCalls
-                          .where((call) =>
-                              call['invoice'] != null &&
-                              call['invoice_number'].toString().isNotEmpty)
-                          .toList(),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
       ),
     );
   }
 
-  Widget _expandableTable({
-    required String title,
-    required List<dynamic> data,
-  }) {
-    final isProductive = title == 'Productive Calls';
+Widget _expandableTable({
+  required String title,
+  required List<dynamic> data,
+}) {
+  final isProductive = title == 'Productive Calls';
 
-    // ✅ FIXED FUNCTION
+  // ✅ FIXED FUNCTION
   String getTotalDuration() {
-  int totalSeconds = 0;
+    int totalSeconds = 0;
 
-  for (var call in data) {
-    final dynamic duration = call['duration'];
-    if (duration == null) continue;
+    for (var call in data) {
+      final dynamic duration = call['duration'];
+      if (duration == null) continue;
 
-    // If already a number (seconds)
-    if (duration is num) {
-      totalSeconds += duration.toInt();
-      continue;
+      String durationStr = duration.toString().trim().toLowerCase();
+
+      // Handle formats like "20 sec", "15s", "1 min 30 sec", etc.
+      if (durationStr.contains('min') || durationStr.contains('sec')) {
+        int minutes = 0;
+        int seconds = 0;
+
+        final minMatch = RegExp(r'(\d+)\s*min').firstMatch(durationStr);
+        final secMatch = RegExp(r'(\d+)\s*sec').firstMatch(durationStr);
+
+        if (minMatch != null) minutes = int.parse(minMatch.group(1)!);
+        if (secMatch != null) seconds = int.parse(secMatch.group(1)!);
+
+        totalSeconds += minutes * 60 + seconds;
+        continue;
+      }
+
+      // Handle "HH:MM:SS" or "MM:SS" formats
+      final parts = durationStr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
+      if (parts.length == 3) {
+        totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
+      } else if (parts.length == 2) {
+        totalSeconds += parts[0] * 60 + parts[1];
+      } else if (parts.length == 1) {
+        totalSeconds += parts.first;
+      }
     }
 
-    // Convert to string for parsing
-    final durationStr = duration.toString().trim();
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
 
-    // Case 1: HH:MM:SS or MM:SS or SS
-    final parts = durationStr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
-
-    if (parts.length == 3) {
-      totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
-    } else if (parts.length == 2) {
-      totalSeconds += parts[0] * 60 + parts[1];
-    } else if (parts.length == 1 && parts.first > 0) {
-      totalSeconds += parts.first;
-    }
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
   }
 
-  final hours = totalSeconds ~/ 3600;
-  final minutes = (totalSeconds % 3600) ~/ 60;
-  final seconds = totalSeconds % 60;
+  String getTotalAmount() {
+    double total = data.fold<double>(0, (double sum, dynamic call) {
+      final amount = call['amount'];
+      if (amount == null) return sum;
+      return sum +
+          (amount is num
+              ? amount.toDouble()
+              : double.tryParse(amount.toString()) ?? 0);
+    });
+    return total.toStringAsFixed(2);
+  }
 
-  return '${hours.toString().padLeft(2, '0')}:'
-      '${minutes.toString().padLeft(2, '0')}:'
-      '${seconds.toString().padLeft(2, '0')}';
-}
-
-    String getTotalAmount() {
-      double total = data.fold<double>(
-        0,
-        (double sum, dynamic call) {
-          final amount = call['amount'];
-          if (amount == null) return sum;
-          return sum +
-              (amount is num
-                  ? amount.toDouble()
-                  : double.tryParse(amount.toString()) ?? 0);
-        },
-      );
-      return total.toStringAsFixed(2);
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 26, 164, 143),
-        borderRadius: BorderRadius.circular(20),
-      ),
+  return Container(
+    decoration: BoxDecoration(
+      color: const Color.fromARGB(255, 26, 164, 143),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent), // ✅ removes top/bottom lines
       child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         collapsedIconColor: Colors.white,
         iconColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        collapsedBackgroundColor: Colors.transparent,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -286,19 +332,72 @@ class _CallReportState extends State<CallReport> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingRowColor:
-                    MaterialStateProperty.all(const Color(0xFF00695C)),
+                headingRowColor: MaterialStateProperty.all(const Color(0xFF00695C)),
                 border: TableBorder.all(color: Colors.white, width: 1),
                 columns: isProductive
                     ? const [
-                        DataColumn(label: Text('No.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
-                        DataColumn(label: Text('Invoice', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
-                        DataColumn(label: Text('Amount', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
+                        DataColumn(
+                          label: Text(
+                            'No.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Invoice',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Amount',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
                       ]
                     : const [
-                        DataColumn(label: Text('No.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
-                        DataColumn(label: Text('Customer', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
-                        DataColumn(label: Text('Duration', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11))),
+                        DataColumn(
+                          label: Text(
+                            'No.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Customer',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
+                            'Duration',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
                       ],
                 rows: data.isNotEmpty
                     ? data.asMap().entries.map((entry) {
@@ -307,19 +406,27 @@ class _CallReportState extends State<CallReport> {
                         return DataRow(
                           cells: isProductive
                               ? [
-                                  DataCell(Text('$index', style: const TextStyle(color: Colors.white, fontSize: 10))),
-                                  DataCell(Text(call['invoice']?.toString() ?? 'N/A', style: const TextStyle(color: Colors.white, fontSize: 10))),
+                                  DataCell(Text('$index',
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 10))),
+                                  DataCell(Text(call['invoice']?.toString() ?? 'N/A',
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 10))),
                                   DataCell(Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(call['amount']?.toString() ?? 'N/A', style: const TextStyle(color: Colors.white, fontSize: 10)),
+                                      Text(call['amount']?.toString() ?? 'N/A',
+                                          style: const TextStyle(
+                                              color: Colors.white, fontSize: 10)),
                                       IconButton(
-                                        icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                                        icon: const Icon(Icons.arrow_forward_ios,
+                                            color: Colors.white, size: 16),
                                         onPressed: () {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => CallDetailPage(call: call),
+                                              builder: (context) =>
+                                                  CallDetailPage(call: call),
                                             ),
                                           );
                                         },
@@ -328,22 +435,31 @@ class _CallReportState extends State<CallReport> {
                                   )),
                                 ]
                               : [
-                                  DataCell(Text('$index', style: const TextStyle(color: Colors.white, fontSize: 10))),
-                                  DataCell(Text(call['customer_name'] ?? 'N/A', style: const TextStyle(color: Colors.white, fontSize: 10))),
+                                  DataCell(Text('$index',
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 10))),
+                                  DataCell(Text(call['customer_name'] ?? 'N/A',
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 10))),
                                   DataCell(Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       SizedBox(
                                         width: 60,
-                                        child: Text(call['duration'] ?? 'N/A', style: const TextStyle(color: Colors.white, fontSize: 10), overflow: TextOverflow.ellipsis),
+                                        child: Text(call['duration'] ?? 'N/A',
+                                            style: const TextStyle(
+                                                color: Colors.white, fontSize: 10),
+                                            overflow: TextOverflow.ellipsis),
                                       ),
                                       IconButton(
-                                        icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+                                        icon: const Icon(Icons.arrow_forward_ios,
+                                            color: Colors.white, size: 16),
                                         onPressed: () {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => CallDetailPage(call: call),
+                                              builder: (context) =>
+                                                  CallDetailPage(call: call),
                                             ),
                                           );
                                         },
@@ -366,7 +482,7 @@ class _CallReportState extends State<CallReport> {
                                   DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
                                   DataCell(Text('-', style: TextStyle(color: Colors.white))),
                                 ],
-                        )
+                        ),
                       ],
               ),
             ),
@@ -378,16 +494,26 @@ class _CallReportState extends State<CallReport> {
               child: isProductive
                   ? Text(
                       'Total Amount: ₹${getTotalAmount()}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     )
                   : Text(
                       'Total Duration: ${getTotalDuration()}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
