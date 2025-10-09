@@ -7,6 +7,7 @@ import 'package:be_call/add_state.dart';
 import 'package:be_call/add_state_cubit.dart' hide AddStateCubit;
 import 'package:be_call/api.dart';
 import 'package:be_call/call_report.dart';
+import 'package:be_call/callreport_date_wise.dart';
 import 'package:be_call/countries_cubit.dart';
 import 'package:be_call/dialerpage.dart';
 import 'package:be_call/homepage.dart';
@@ -273,6 +274,18 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Column(
                     children: [
+                        _settingsTile(
+                        icon: Icons.person_2,
+                        label: 'datewise Call Report',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CallreportDateWise(),
+                            ),
+                          );
+                        },
+                      ),
                       _settingsTile(
                         icon: Icons.person_2,
                         label: 'Contacts',

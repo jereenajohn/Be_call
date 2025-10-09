@@ -34,7 +34,7 @@ class _UpdateContactState extends State<UpdateContact> {
 
   Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return prefs.getString('token');
   }
 
   Future<void> _fetchCustomers() async {
