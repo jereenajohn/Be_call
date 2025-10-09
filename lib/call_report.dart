@@ -64,7 +64,7 @@ DateTimeRange? selectedRange;
     );
 
     final productiveResponse = await http.get(
-      Uri.parse('$api/api/call/report/?type=productive'),
+      Uri.parse('$api/api/call/report/staff/$userId/?type=productive'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -233,10 +233,8 @@ DateTimeRange? selectedRange;
     ),
   ],
 ),
-const SizedBox(height: 20),
-
-                      // Total Calls Summary
-                      Container(
+                      const SizedBox(height: 20),
+                    Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 14,
