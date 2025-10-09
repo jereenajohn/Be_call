@@ -45,63 +45,91 @@ class _CallReportState extends State<CallReport> {
     }
     return null;
   }
+DateTimeRange? selectedRange;
 
-  Future<void> fetchCallReports() async {
-    try {
-      var token = await getToken();
-      var userId = await getUserId();
-      var user = await getUserDetails();
-      print("User ID from prefs: $userId");
-      print("Token: $token");
+ Future<void> fetchCallReports({DateTimeRange? range}) async {
+  try {
+    var token = await getToken();
+    var userId = await getUserId();
+    var user = await getUserDetails();
 
-      if (userId == null) {
-        print("No user id found in SharedPreferences");
-        return;
-      }
-
-      final activeResponse = await http.get(
-        Uri.parse('$api/api/call/report/'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      final productiveResponse = await http.get(
-        Uri.parse('$api/api/call/report/?type=productive'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      print('Active response: ${activeResponse.statusCode}');
-      print('Productive responseeee: ${productiveResponse.statusCode}');
-      print('Productive responseeee: ${productiveResponse.body}');
-
-      if (activeResponse.statusCode == 200 &&
-          productiveResponse.statusCode == 200) {
-        final activeData = json.decode(activeResponse.body);
-        final productiveData = json.decode(productiveResponse.body);
-
-        setState(() {
-          activeCalls = activeData;
-          productiveCalls = productiveData;
-          userDetails = user;
-          isLoading = false;
-        });
-
-        print(
-          'Fetched ${activeData.length} active calls and ${productiveData.length} productive calls for user ID $userId',
-        );
-      } else {
-        setState(() {
-          isLoading = false;
-          userDetails = user;
-        });
-        print(
-          'Error fetching call report: Active=${activeResponse.statusCode}, Productive=${productiveResponse.statusCode}',
-        );
-      }
-    } catch (e) {
-      setState(() => isLoading = false);
-      print('Exception: $e');
+    if (userId == null) {
+      print("No user id found in SharedPreferences");
+      return;
     }
+
+    final activeResponse = await http.get(
+      Uri.parse('$api/api/call/report/staff/$userId/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    final productiveResponse = await http.get(
+      Uri.parse('$api/api/call/report/?type=productive'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    print('Active response: ${activeResponse.statusCode}');
+    print('Productive response: ${productiveResponse.statusCode}');
+
+    if (activeResponse.statusCode == 200 &&
+        productiveResponse.statusCode == 200) {
+      final activeData = json.decode(activeResponse.body);
+      final productiveData = json.decode(productiveResponse.body);
+
+      // Determine date range
+      DateTime today = DateTime.now();
+      DateTime start = range?.start ?? DateTime(today.year, today.month, today.day);
+      DateTime end = range?.end ?? DateTime(today.year, today.month, today.day);
+
+      bool isWithinRange(String? dateString) {
+        if (dateString == null || dateString.isEmpty) return false;
+        try {
+          // Convert from UTC/ISO + timezone to local date
+          DateTime date = DateTime.parse(dateString).toLocal();
+
+          // Compare only Y-M-D (ignore time)
+          DateTime callDate = DateTime(date.year, date.month, date.day);
+          DateTime startDate = DateTime(start.year, start.month, start.day);
+          DateTime endDate = DateTime(end.year, end.month, end.day);
+
+          return !callDate.isBefore(startDate) && !callDate.isAfter(endDate);
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // Apply filtering to both lists
+      List<dynamic> filteredActive = activeData.where((call) {
+        return isWithinRange(call['date'] ?? call['created_at']);
+      }).toList();
+
+      List<dynamic> filteredProductive = productiveData.where((call) {
+        return isWithinRange(call['date'] ?? call['created_at']);
+      }).toList();
+
+      setState(() {
+        activeCalls = filteredActive;
+        productiveCalls = filteredProductive;
+        userDetails = user;
+        isLoading = false;
+      });
+
+      print('Fetched ${filteredActive.length} active calls and ${filteredProductive.length} productive calls');
+    } else {
+      setState(() {
+        isLoading = false;
+        userDetails = user;
+      });
+      print(
+        'Error fetching call report: Active=${activeResponse.statusCode}, Productive=${productiveResponse.statusCode}',
+      );
+    }
+  } catch (e) {
+    setState(() => isLoading = false);
+    print('Exception: $e');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -158,6 +186,54 @@ class _CallReportState extends State<CallReport> {
                           ),
                         ),
                       const SizedBox(height: 20),
+                      Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Expanded(
+      child: Text(
+        selectedRange == null
+            ? 'Showing: Today'
+            : 'From: ${selectedRange!.start.toString().split(" ")[0]}  →  To: ${selectedRange!.end.toString().split(" ")[0]}',
+        style: const TextStyle(color: Colors.white, fontSize: 14),
+      ),
+    ),
+    ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color.fromARGB(255, 26, 164, 143),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      onPressed: () async {
+        final DateTime now = DateTime.now();
+        final picked = await showDateRangePicker(
+          context: context,
+          firstDate: DateTime(now.year - 1),
+          lastDate: DateTime(now.year + 1),
+          initialDateRange: selectedRange ??
+              DateTimeRange(
+                start: DateTime(now.year, now.month, now.day),
+                end: DateTime(now.year, now.month, now.day),
+              ),
+        );
+
+        if (picked != null) {
+          setState(() {
+            selectedRange = picked;
+            isLoading = true;
+          });
+          await fetchCallReports(range: picked);
+        }
+      },
+      icon: const Icon(Icons.calendar_month, color: Colors.white, size: 18),
+      label: const Text(
+        'Select Dates',
+        style: TextStyle(color: Colors.white, fontSize: 13),
+      ),
+    ),
+  ],
+),
+const SizedBox(height: 20),
 
                       // Total Calls Summary
                       Container(
@@ -191,6 +267,8 @@ class _CallReportState extends State<CallReport> {
                         ),
                       ),
                       const SizedBox(height: 16),
+// 📅 Date Range Selector
+
 
                       _expandableTable(
                         title: 'Active Calls',
