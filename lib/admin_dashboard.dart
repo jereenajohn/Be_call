@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'package:be_call/api.dart';
+import 'package:be_call/callreport_date_wise.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as https;
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -16,6 +20,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int totalRecords = 0;
   int productiveCount = 0;
   double totalAmount = 0.0;
+  List<Map<String, dynamic>> groupedData = [];
+  bool isLoading = true;
+
+  DateTime? startDate;
+  DateTime? endDate;
 
   String? _username;
 
@@ -25,6 +34,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _fetchUser();
     _loadUserName();
     _fetchDashboardSummary();
+
+    // Fetch today's data
+    final today = DateTime.now();
+    getDateWise(today, today);
   }
 
   Future<int?> getUserId() async {
@@ -47,6 +60,84 @@ class _AdminDashboardState extends State<AdminDashboard> {
     setState(() {
       _username = prefs.getString('username') ?? 'Admin';
     });
+  }
+
+  int parseDuration(String duration) {
+    int totalSeconds = 0;
+    final minMatch = RegExp(r'(\d+)\s*min').firstMatch(duration);
+    final secMatch = RegExp(r'(\d+)\s*sec').firstMatch(duration);
+    if (minMatch != null) totalSeconds += int.parse(minMatch.group(1)!) * 60;
+    if (secMatch != null) totalSeconds += int.parse(secMatch.group(1)!);
+    return totalSeconds;
+  }
+
+  Future<void> getDateWise(DateTime from, DateTime to) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    var token = await getToken();
+    String fromStr = DateFormat('yyyy-MM-dd').format(from);
+    String toStr = DateFormat('yyyy-MM-dd').format(to);
+
+    try {
+      var res = await http.get(
+        Uri.parse("$api/api/call/report/?from=$fromStr&to=$toStr"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (res.statusCode != 200) {
+        // fallback to single-day endpoint
+        res = await http.get(
+          Uri.parse("$api/api/call/report/date/$fromStr/"),
+          headers: {"Authorization": "Bearer $token"},
+        );
+      }
+
+      if (res.statusCode == 200) {
+        List<dynamic> data = jsonDecode(res.body);
+        Map<String, Map<String, dynamic>> grouped = {};
+
+        for (var call in data) {
+          String name = call['created_by_name'] ?? 'Unknown';
+          String status = call['status'] ?? '';
+          String durationStr = call['duration'] ?? '0 sec';
+          double amount = (call['amount'] ?? 0).toDouble();
+
+          if (status.toLowerCase() == 'productive') {
+            grouped.putIfAbsent(
+              name,
+              () => {'count': 0, 'duration': 0, 'amount': 0.0},
+            );
+
+            grouped[name]!['count'] += 1;
+            grouped[name]!['duration'] += parseDuration(durationStr);
+            grouped[name]!['amount'] += amount;
+          }
+        }
+
+        setState(() {
+          groupedData =
+              grouped.entries
+                  .map(
+                    (e) => {
+                      'name': e.key,
+                      'count': e.value['count'],
+                      'duration': e.value['duration'],
+                      'amount': e.value['amount'],
+                    },
+                  )
+                  .toList();
+          isLoading = false;
+        });
+      } else {
+        print("Failed: ${res.statusCode}");
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print("Error: $e");
+      setState(() => isLoading = false);
+    }
   }
 
   Future<void> _fetchDashboardSummary() async {
@@ -249,10 +340,75 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   const SizedBox(height: 6),
 
                   // Data Rows
-                  _FancyRow("John Doe", "3h 40m", "42", "₹15,600", false),
-                  _FancyRow("Jane Smith", "2h 10m", "27", "₹9,800", true),
-                  _FancyRow("Michael Brown", "4h 25m", "53", "₹18,400", false),
-                  _FancyRow("Emily White", "1h 55m", "21", "₹7,250", true),
+                  // Data Rows (dynamic)
+                  isLoading
+                      ? const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(
+                          color: Color.fromARGB(255, 26, 164, 143),
+                        ),
+                      )
+                      : Column(
+                        children:
+                            groupedData.isEmpty
+                                ? const [
+                                  Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: Text(
+                                      "No data available for today",
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ]
+                                : groupedData.asMap().entries.map((entry) {
+                                  final i = entry.key;
+                                  final item = entry.value;
+                                  final hours =
+                                      (item['duration'] / 3600).floor();
+                                  final minutes =
+                                      ((item['duration'] % 3600) / 60).floor();
+
+                                  return _FancyRow(
+                                    item['name'],
+                                    "${hours}h ${minutes}m",
+                                    item['count'].toString(),
+                                    "₹${item['amount'].toStringAsFixed(2)}",
+                                    i.isEven,
+                                  );
+                                }).toList(),
+                      ),
+
+                      const SizedBox(height: 10),
+Align(
+  alignment: Alignment.bottomRight,
+  child: TextButton.icon(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CallreportDateWise(),
+        ),
+      );
+    },
+    icon: const Icon(
+      Icons.arrow_forward_ios,
+      color: Color.fromARGB(255, 26, 164, 143),
+      size: 15,
+    ),
+    label: const Text(
+      "See More",
+      style: TextStyle(
+        color: Color.fromARGB(255, 26, 164, 143),
+        fontWeight: FontWeight.bold,
+        fontSize: 13,
+      ),
+    ),
+  ),
+),
+
                 ],
               ),
             ),
