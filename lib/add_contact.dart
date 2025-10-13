@@ -29,7 +29,7 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
 
   Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return prefs.getString('token');
   }
 
   @override
@@ -93,8 +93,9 @@ print(response.body);
           ..emails = email.isNotEmpty ? [Email(email)] : [];
 
     await FlutterContacts.insertContact(contact);
-
     var token = await getToken();
+    print("Contact saved locallyyyyyy$token");
+
     try {
       var response = await https.post(
         Uri.parse("$api/api/contact/info"),
@@ -107,7 +108,7 @@ print(response.body);
           "last_name": lastName,
           "phone": phone,
           "email": email,
-          "state": _selectedState, // no need to stringify
+          "state": _selectedState, 
         }),
       );
 print(response.statusCode);
