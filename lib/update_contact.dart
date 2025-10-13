@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:be_call/add_contact.dart';
 import 'package:be_call/add_state.dart';
 import 'package:be_call/api.dart';
 import 'package:flutter/material.dart';
@@ -24,30 +25,58 @@ class _UpdateContactState extends State<UpdateContact> {
 
   int? _selectedState; // 👈 should be int, not String
   List<dynamic> _customers = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     print("Contact ID: ${widget.id}");
     _fetchCustomers();
+    _fetchCustomer(); // 👈 fetch specific customer data
   }
 
   Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+Future<void> _fetchCustomers() async {
+    var token = await getToken();
+    setState(() => _loading = true);
 
-  Future<void> _fetchCustomers() async {
+    try {
+      var response = await https.get(
+        Uri.parse("$api/api/contact/info"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+print(response.statusCode);
+print(response.body);
+      if (response.statusCode == 200) {
+        setState(() {
+          _customers = List<dynamic>.from(jsonDecode(response.body));
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+        print("Failed to load customers: ${response.statusCode}");
+      }
+    } catch (e) {
+      setState(() => _loading = false);
+      print("Error: $e");
+    }
+  }
+
+  Future<void> _fetchCustomer() async {
     var token = await getToken();
 
     try {
       var response = await https.get(
-        Uri.parse("$api/api/customers/${widget.id}/"),
+        Uri.parse("$api/api/contact/info/${widget.id}/"),
         headers: {"Authorization": "Bearer $token"},
       );
 
-      print("$api/api/customers/${widget.id}/");
-
+      print("$api/api/contact/info/${widget.id}/");
+print(response.statusCode);
+print(response.body);
       if (response.statusCode == 200) {
         final Map<String, dynamic> customer = jsonDecode(response.body);
         print("Fetched customer data: $customer");
@@ -72,7 +101,7 @@ class _UpdateContactState extends State<UpdateContact> {
   var token = await getToken();
 
   try {
-    final url = Uri.parse("$api/api/customers/${widget.id}/");
+    final url = Uri.parse("$api/api/contact/info/${widget.id}/");
 
     final body = jsonEncode({
       "first_name": _firstNameCtrl.text.trim(),
@@ -95,7 +124,7 @@ class _UpdateContactState extends State<UpdateContact> {
 
     if (response.statusCode == 200) {
       print("✅ Customer updated: ${response.body}");
-      Navigator.pop(context, true); // return success to previous page
+      Navigator.push(context, MaterialPageRoute(builder: ((context) => AddContactFormPage())));
     } else {
       print("❌ Failed to update: ${response.body}");
       Navigator.pop(context, false); // return failure
@@ -160,10 +189,69 @@ class _UpdateContactState extends State<UpdateContact> {
                 "Saved Contacts:",
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
-              const SizedBox(height: 10),
-              _buildSavedContactCard(name: "CUSTOMER 1 null", phone: "8760000011"),
-              _buildSavedContactCard(
-                  name: "testttti tt", phone: "9658253412", email: "testti@gmail.com"),
+             const SizedBox(height: 8),
+
+              _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _customers.isEmpty
+                  ? const Text(
+                    "No contacts found",
+                    style: TextStyle(color: Colors.white),
+                  )
+                  : Column(
+                    children:
+                        _customers.map((c) {
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => BlocProvider(
+                                        create:
+                                            (_) => StatesCubit()..fetchStates(),
+                                        child: UpdateContact(
+                                          id: c['id'],
+                                        ),
+                                      ),
+                                ),
+                              );
+                            },
+                            child: Card(
+                              color: Colors.grey[900],
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                ),
+                                title: Text(
+                                  "${c['first_name']} ${c['last_name']}",
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Phone: ${c['phone']}",
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    if (c['email'] != null &&
+                                        c['email'].toString().isNotEmpty)
+                                      Text(
+                                        "Email: ${c['email']}",
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                  ),
             ],
           ),
         ),
