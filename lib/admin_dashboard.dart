@@ -248,7 +248,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoCard(Icons.people, "Staffs", "70"),
+                _buildInfoCard(Icons.people, "Staffs", "60"),
                 _buildInfoCard(
                   Icons.receipt_long_rounded,
                   "Invoices",
@@ -259,8 +259,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
 
             const SizedBox(height: 30),
-
-            // Staff Performance Table
             // Staff Performance Overview Section
             _buildSectionTitle("Staff Performance Overview"),
             const SizedBox(height: 10),
@@ -381,34 +379,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                 }).toList(),
                       ),
 
-                      const SizedBox(height: 10),
-Align(
-  alignment: Alignment.bottomRight,
-  child: TextButton.icon(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const CallreportDateWise(),
-        ),
-      );
-    },
-    icon: const Icon(
-      Icons.arrow_forward_ios,
-      color: Color.fromARGB(255, 26, 164, 143),
-      size: 15,
-    ),
-    label: const Text(
-      "See More",
-      style: TextStyle(
-        color: Color.fromARGB(255, 26, 164, 143),
-        fontWeight: FontWeight.bold,
-        fontSize: 13,
-      ),
-    ),
-  ),
-),
-
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CallreportDateWise(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Color.fromARGB(255, 26, 164, 143),
+                        size: 15,
+                      ),
+                      label: const Text(
+                        "See More",
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 26, 164, 143),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
