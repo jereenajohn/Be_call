@@ -47,10 +47,11 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
 
     try {
       var response = await https.get(
-        Uri.parse("$api/api/customers/"),
+        Uri.parse("$api/api/contact/info"),
         headers: {"Authorization": "Bearer $token"},
       );
-
+print(response.statusCode);
+print(response.body);
       if (response.statusCode == 200) {
         setState(() {
           _customers = List<dynamic>.from(jsonDecode(response.body));
@@ -96,7 +97,7 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
     var token = await getToken();
     try {
       var response = await https.post(
-        Uri.parse("$api/api/customers/"),
+        Uri.parse("$api/api/contact/info"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
@@ -109,7 +110,8 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
           "state": _selectedState, // no need to stringify
         }),
       );
-
+print(response.statusCode);
+print(response.body);
       if (mounted) {
         if (response.statusCode == 201 || response.statusCode == 200) {
           ScaffoldMessenger.of(context).showSnackBar(

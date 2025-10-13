@@ -39,12 +39,19 @@ Future<void> _fetchCountries() async {
   setState(() => _loading = true);
   try {
     var response = await https.get(
-      Uri.parse("$api/api/countries/"),
+      Uri.parse("$api/api/country/codes/"),
       headers: {"Authorization": "Bearer $token"},
     );
+
+    print(response.statusCode);
+    print(response.body);
+
     if (response.statusCode == 200) {
+      var decoded = jsonDecode(response.body);
+
+      // ✅ Extract the list under "data"
       setState(() {
-        _countries = List<dynamic>.from(jsonDecode(response.body));
+        _countries = List<dynamic>.from(decoded['data']);
         _loading = false;
       });
     } else {
@@ -58,17 +65,20 @@ Future<void> _fetchCountries() async {
 }
 
 
+
   Future<void> _saveCountry() async {
     var token = await getToken();
     try{
-      var response= await https.post(Uri.parse("$api/api/countries/"),
+      var response= await https.post(Uri.parse("$api/api/country/codes/"),
       headers: {
          
           "Authorization": "Bearer $token",
         },
       body:{
-        "name":_NameCtrl.text,
-        "code":_codeCtrl.text
+        // "name":_NameCtrl.text,
+        // "code":_codeCtrl.text
+                    'country_code': _NameCtrl.text,
+
       }
       );
       print(response.statusCode);
@@ -138,13 +148,13 @@ Future<void> _fetchCountries() async {
                 style: const TextStyle(color: Colors.white),
               ),
               const SizedBox(height: 16),
-               TextFormField(
-                controller: _codeCtrl,
-                decoration: _inputDecoration('country code'),
-                validator: (v) => v!.isEmpty ? 'Enter country code' : null,
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
+              //  TextFormField(
+              //   controller: _codeCtrl,
+              //   decoration: _inputDecoration('country code'),
+              //   validator: (v) => v!.isEmpty ? 'Enter country code' : null,
+              //   style: const TextStyle(color: Colors.white),
+              // ),
+              // const SizedBox(height: 16),
            
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -178,10 +188,10 @@ _loading
               return Card(
                 color: Colors.grey[900],
                 child: ListTile(
-                  title: Text(c['name'], style: const TextStyle(color: Colors.white)),
-                  subtitle: Text("Code: ${c['code']}",
-                      style: TextStyle(color: Colors.white70)),
-                ),
+  title: Text(c['country_code'] ?? '', style: const TextStyle(color: Colors.white)),
+ 
+)
+
               );
             }).toList(),
           ),

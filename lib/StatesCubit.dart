@@ -23,14 +23,16 @@ class StatesCubit extends Cubit<StatesState> {
           "Authorization": "Bearer $token",
         },
       );
-
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         emit(StatesLoaded(data));
-      } else {
-        emit(StatesError("Failed to load states. Code: ${response.statusCode}"));
+      } 
+      else {
+           emit(StatesError("Failed to load states. Code: ${response.statusCode}"));
       }
-    } catch (e) {
+    } 
+    catch (e) 
+    {
       emit(StatesError("Error: $e"));
     }
   }
