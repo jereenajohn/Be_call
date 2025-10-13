@@ -16,8 +16,6 @@ class CountriesError extends CountriesState {
   final String error;
   CountriesError(this.error);
 }
-
-// ---- Cubit ----
 class CountriesCubit extends Cubit<CountriesState> {
   CountriesCubit() : super(CountriesInitial());
 
@@ -30,7 +28,7 @@ class CountriesCubit extends Cubit<CountriesState> {
     emit(CountriesLoading());
     try {
       final token = await _getToken();
-      final url = Uri.parse('$api/api/countries/');
+      final url = Uri.parse('$api/api/country/codes/');
       final res = await http.get(
         url,
         headers: {
@@ -38,15 +36,19 @@ class CountriesCubit extends Cubit<CountriesState> {
           'Authorization': 'Bearer $token',
         },
       );
-print(res.statusCode);
-print(res.body);
+
+      print(res.statusCode);
+      print(res.body);
+
       if (res.statusCode == 200) {
-        final List data = jsonDecode(res.body);
-        // expecting [{"id":1,"name":"India"}, ...]
+        final Map<String, dynamic> jsonResponse = jsonDecode(res.body);
+        final List<dynamic> data = jsonResponse['data'] ?? [];
+
         final countries = data.map<Map<String, dynamic>>((e) => {
           "id": e["id"],
-          "name": e["name"],
+          "name": e["country_code"], // or e["country_name"] if you prefer
         }).toList();
+
         emit(CountriesLoaded(countries));
       } else {
         emit(CountriesError('Failed: ${res.statusCode}'));

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:be_call/add_state_cubit.dart';
 import 'package:be_call/api.dart';
 import 'package:be_call/countries_cubit.dart';
 import 'package:flutter/material.dart';
@@ -6,70 +7,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// -------------------- ADD STATE CUBIT --------------------
-class AddStateCubit extends Cubit<AddStateState> {
-  AddStateCubit() : super(AddStateInitial());
-
-  Future<String?> gettokenFromPrefs() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
-  }
-
-  Future<void> saveState(String name, int? countryId) async {
-    if (name.isEmpty) {
-      emit(AddStateError("Please enter state name"));
-      return;
-    }
-    if (countryId == null) {
-      emit(AddStateError("Please select a country"));
-      return;
-    }
-
-    emit(AddStateLoading());
-    var token = await gettokenFromPrefs();
-    try {
-      final url = Uri.parse("$api/api/states/");
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"name": name, "country": countryId}),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        emit(AddStateSuccess("State saved successfully!"));
-      } else {
-        emit(AddStateError("Failed to save. Code: ${response.statusCode}"));
-      }
-    } catch (e) {
-      emit(AddStateError("Error: $e"));
-    }
-  }
-
-  void reset() => emit(AddStateInitial());
-}
-
-abstract class AddStateState {}
-class AddStateInitial extends AddStateState {}
-class AddStateLoading extends AddStateState {}
-class AddStateSuccess extends AddStateState {
-  final String message;
-  AddStateSuccess(this.message);
-}
-class AddStateError extends AddStateState {
-  final String error;
-  AddStateError(this.error);
-}
-
-/// -------------------- STATES CUBIT --------------------
 class StatesCubit extends Cubit<StatesState> {
   StatesCubit() : super(StatesInitial());
 
   Future<String?> gettokenFromPrefs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return prefs.getString('token');
   }
 
   Future<void> fetchStates() async {
@@ -83,9 +26,11 @@ class StatesCubit extends Cubit<StatesState> {
           "Authorization": "Bearer $token",
         },
       );
-
+print("response.statusCode");
+      print(response.body);
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      final List<dynamic> data = jsonResponse['data'] ?? [];
         emit(StatesLoaded(data));
       } else {
         emit(StatesError("Failed to load states. Code: ${response.statusCode}"));
