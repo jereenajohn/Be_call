@@ -17,7 +17,7 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   List<dynamic> _customers = [];
-  int totalRecords = 0;
+  int totalRecords = 0; 
   int productiveCount = 0;
   double totalAmount = 0.0;
   List<Map<String, dynamic>> groupedData = [];
@@ -248,7 +248,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoCard(Icons.people, "Staffs", "60"),
+                _buildInfoCard(Icons.people, "Staffs", "65"),
                 _buildInfoCard(
                   Icons.receipt_long_rounded,
                   "Invoices",
