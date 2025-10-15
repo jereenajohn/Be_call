@@ -25,6 +25,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
   void initState() {
     super.initState();
     _loadCalls();
+    _fetchCustomers();
     _searchCtrl.addListener(_onSearch);
   }
 
@@ -43,61 +44,119 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     return null;
   }
 
+
   Future<String?> getUserName() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('name');
   }
 
-  Future<void> sendCallReport({
-    required String customerName,
-    required String duration,
-    required String phone,
-  }) async {
-    print(
-      "Preparing to send call report for $customerName, duration: $duration",
-    );
-    final url = Uri.parse("$api/api/call/report/");
 
-    final token = await getToken();
-    final userId = await getUserId();
-    final userName = await getUserName();
-
-    if (token == null) {
-      print("❌ No token found, cannot send call report");
-      return;
-    }
-
-    final body = {
-      "customer_name": customerName,
-      "duration": duration,
-      "status": "Active",
-      "phone": phone,
-    };
-
-    try {
-      print("Sending call report: $body");
-
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(body),
-      );
-
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        print("✅ Call report sent successfully: ${response.body}");
-      } else {
-        print("⚠️ Failed: ${response.statusCode} - ${response.body}");
-      }
-    } catch (e) {
-      print("❌ Error sending call report: $e");
-    }
+  Future<int?> getid() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('id');
   }
+  List<dynamic> _customers = [];
+  bool _loading = true;
+Future<void> _fetchCustomers() async {
+  print("Fetching customers...");
+  final token = await getToken();
+  final id = await getid();
+  print("$api/api/contact/info/staff/$id/");
+
+  setState(() => _loading = true);
+
+  try {
+    final response = await http.get(
+      Uri.parse("$api/api/contact/info/staff/$id/"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    print(response.statusCode);
+    print("response.bodyyyyyyyy${response.body}");
+
+    if (response.statusCode == 200) {
+      final List<dynamic> items = List<dynamic>.from(jsonDecode(response.body));
+
+      // build lookup map
+      _phoneToCustomerId.clear();
+      for (final c in items) {
+        // tolerate different id key names (id or customer_id)
+        final dynamic rawId = c['id'] ?? c['customer_id'];
+        if (rawId == null) continue;
+        final int? cid = rawId is int ? rawId : int.tryParse('$rawId');
+        if (cid == null) continue;
+
+        for (final p in _extractPhones(c)) {
+          final norm = _normalize(p);
+          if (norm.isNotEmpty) {
+            // only set if not present to keep first match
+            _phoneToCustomerId.putIfAbsent(norm, () => cid);
+          }
+        }
+      }
+
+      setState(() {
+        _customers = items;
+        _loading = false;
+      });
+    } else {
+      setState(() => _loading = false);
+      print("Failed to load customers: ${response.statusCode}");
+    }
+  } catch (e) {
+    setState(() => _loading = false);
+    print("Error: $e");
+  }
+}
+
+  
+ Future<void> sendCallReport({
+  required String customerName,
+  required String duration,
+  required String phone,
+  int? customerId, // NEW
+}) async {
+  print("🔔 Sending call report...$customerId");
+  print("Preparing to send call report for $customerName, duration: $duration");
+  final url = Uri.parse("$api/api/call/report/");
+
+  final token = await getToken();
+  if (token == null) {
+    print("❌ No token found, cannot send call report");
+    return;
+  }
+
+  final body = <String, dynamic>{
+    "customer_name": customerName,
+    "duration": duration,
+    "status": "Active",
+    "phone": phone,
+    if (customerId != null) "Customer": customerId,
+  };
+
+  try {
+    print("Sending call report: $body");
+    final response = await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(body),
+    );
+
+    print("Response status: ${response.statusCode}");
+    print("Response body: ${response.body}");
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("✅ Call report sent successfully: ${response.body}");
+    } else {
+      print("⚠️ Failed: ${response.statusCode} - ${response.body}");
+    }
+  } catch (e) {
+    print("❌ Error sending call report: $e");
+  }
+}
+
 
   void _onSearch() {
     final q = _searchCtrl.text.toLowerCase();
@@ -141,6 +200,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
             customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
             duration: "${lastCall.duration} sec",
             phone: lastCall.number ?? '', // 👈 Added
+            customerId: _phoneToCustomerId[_normalize(lastCall.number ?? '')], // NEW
           );
 
           await prefs.setString('last_reported_call', callKey);
@@ -150,6 +210,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
             customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
             duration: "0 sec",
             phone: lastCall.number ?? '', // 👈 Added
+            customerId: _phoneToCustomerId[_normalize(lastCall.number ?? '')], // NEW
           );
 
           await prefs.setString('last_reported_call', callKey);
@@ -178,11 +239,36 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       });
     }
   }
+// Store a fast lookup: normalizedPhone -> customerId
+final Map<String, int> _phoneToCustomerId = {};
 
-  String _normalize(String n) {
-    final digits = n.replaceAll(RegExp(r'\D'), '');
-    return digits.length > 10 ? digits.substring(digits.length - 10) : digits;
+// Safely normalize to last 10 digits (works for +91 and most formats)
+String _normalize(String n) {
+  final digits = n.replaceAll(RegExp(r'\D'), '');
+  return digits.length > 10 ? digits.substring(digits.length - 10) : digits;
+}
+
+// Try to read possible phone fields from a customer object
+List<String> _extractPhones(dynamic c) {
+  final phones = <String>[];
+
+  // common single fields
+  for (final k in ['phone', 'phone_number', 'mobile', 'mobile1', 'mobile2']) {
+    final v = c[k];
+    if (v is String && v.trim().isNotEmpty) phones.add(v.trim());
   }
+
+  // arrays like ["+91...","..."]
+  final arr = c['phones'];
+  if (arr is List) {
+    for (final p in arr) {
+      if (p is String && p.trim().isNotEmpty) phones.add(p.trim());
+    }
+  }
+
+  // de-dup
+  return phones.toSet().toList();
+}
 
   String _dateLabel(DateTime d) {
     final today = DateTime.now();

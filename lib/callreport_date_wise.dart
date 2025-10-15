@@ -178,136 +178,173 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
         ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  color: Colors.grey[900],
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Text(
-                    rangeText.isEmpty ? "Today" : rangeText,
-                    style: const TextStyle(
-                        color: Colors.tealAccent, fontSize: 13),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.vertical,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Table(
-                        border: TableBorder.all(color: Colors.white24, width: 1),
-                        columnWidths: const {
-                          0: FlexColumnWidth(2),
-                          1: FlexColumnWidth(1),
-                          2: FlexColumnWidth(1.3),
-                          3: FlexColumnWidth(1.5),
-                        },
-                        children: [
-                          // Table Header
-                          TableRow(
-                            decoration: BoxDecoration(color: Colors.grey[900]),
-                            children: const [
-                              Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Text(
-                                  "Created By",
-                                  style: TextStyle(
-                                      color: Colors.tealAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Text(
-                                  "Calls",
-                                  style: TextStyle(
-                                      color: Colors.tealAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Text(
-                                  "Duration",
-                                  style: TextStyle(
-                                      color: Colors.tealAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Text(
-                                  "Amount",
-                                  style: TextStyle(
-                                      color: Colors.tealAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Data rows
-                          ...groupedData.map((row) {
-                            return TableRow(
-                              decoration:
-                                  const BoxDecoration(color: Colors.black),
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Text(
-                                    row['name'],
-                                    style:
-                                        const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Text(
-                                    row['count'].toString(),
-                                    textAlign: TextAlign.center,
-                                    style:
-                                        const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Text(
-                                    formatDuration(row['duration']),
-                                    textAlign: TextAlign.center,
-                                    style:
-                                        const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Text(
-                                    "₹${row['amount'].toStringAsFixed(2)}",
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        color: Colors.tealAccent,
-                                        fontWeight: FontWeight.w500),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+    ? const Center(child: CircularProgressIndicator(color: Colors.white))
+    : Column(
+        children: [
+          // 🔹 Date Range Header
+          Container(
+            width: double.infinity,
+            color: Colors.grey[900],
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              rangeText.isEmpty ? "Today" : rangeText,
+              style: const TextStyle(
+                  color: Colors.tealAccent, fontSize: 13, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
             ),
+          ),
+
+         
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Table(
+  border: TableBorder.all(color: Colors.white24, width: 1),
+  columnWidths: const {
+    0: FlexColumnWidth(2),
+    1: FlexColumnWidth(1),
+    2: FlexColumnWidth(1.3),
+    3: FlexColumnWidth(1.5),
+  },
+  children: [
+    // 🔹 Table Header
+    TableRow(
+      decoration: BoxDecoration(color: Colors.grey[900]),
+      children: const [
+        Padding(
+          padding: EdgeInsets.all(10),
+          child: Text(
+            "Created By",
+            style: TextStyle(
+                color: Colors.tealAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 14),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(10),
+          child: Text(
+            "Calls",
+            style: TextStyle(
+                color: Colors.tealAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(10),
+          child: Text(
+            "Duration",
+            style: TextStyle(
+                color: Colors.tealAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(10),
+          child: Text(
+            "Amount",
+            style: TextStyle(
+                color: Colors.tealAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 14),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    ),
+
+    // 🔹 TOTAL Row (Cumulative)
+    if (groupedData.isNotEmpty)
+      TableRow(
+        decoration: const BoxDecoration(color: Color(0xFF1E1E1E)),
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(10),
+            child: Text(
+              "TOTAL",
+              style: TextStyle(
+                  color: Colors.tealAccent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(
+              groupedData.fold<int>(0, (sum, row) => sum + ((row['count'] ?? 0) as int))
+                  .toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(
+              formatDuration(groupedData.fold<int>(
+                  0, (sum, row) => sum + ((row['duration'] ?? 0) as int))),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(
+              "₹${groupedData.fold<double>(0, (sum, row) => sum + (row['amount'] ?? 0.0)).toStringAsFixed(2)}",
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  color: Colors.tealAccent, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+
+    // 🔹 Data Rows
+    ...groupedData.map((row) {
+      return TableRow(
+        decoration: const BoxDecoration(color: Colors.black),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(row['name'],
+                style: const TextStyle(color: Colors.white)),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(row['count'].toString(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white)),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text(formatDuration(row['duration']),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white)),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Text("₹${row['amount'].toStringAsFixed(2)}",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: Colors.tealAccent, fontWeight: FontWeight.w500)),
+          ),
+        ],
+      );
+    }),
+  ],
+)
+
+              ),
+            ),
+          ),
+        ],
+      ),
+
     );
   }
 }
