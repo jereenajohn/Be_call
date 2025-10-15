@@ -27,10 +27,9 @@ class _ContactsListPageState extends State<ContactsListPage> {
     _loadContacts();
     _searchCtrl.addListener(_onSearch);
   }
- Future<void> _callDirect(String n) async =>
-      FlutterPhoneDirectCaller.callNumber(n);
 
- 
+  Future<void> _callDirect(String n) async =>
+      FlutterPhoneDirectCaller.callNumber(n);
 
   Future<void> _loadContacts() async {
     if (await FlutterContacts.requestPermission()) {
@@ -51,13 +50,15 @@ class _ContactsListPageState extends State<ContactsListPage> {
   void _onSearch() {
     final q = _searchCtrl.text.toLowerCase();
     setState(() {
-      _filteredContacts = q.isEmpty
-          ? _allContacts
-          : _allContacts.where((c) {
-              final name = c.displayName.toLowerCase();
-              final numbers = c.phones.map((p) => p.number).join(' ').toLowerCase();
-              return name.contains(q) || numbers.contains(q);
-            }).toList();
+      _filteredContacts =
+          q.isEmpty
+              ? _allContacts
+              : _allContacts.where((c) {
+                final name = c.displayName.toLowerCase();
+                final numbers =
+                    c.phones.map((p) => p.number).join(' ').toLowerCase();
+                return name.contains(q) || numbers.contains(q);
+              }).toList();
     });
   }
 
@@ -69,7 +70,11 @@ class _ContactsListPageState extends State<ContactsListPage> {
         backgroundColor: Colors.black,
         title: const Text(
           'Contacts',
-          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
@@ -77,15 +82,16 @@ class _ContactsListPageState extends State<ContactsListPage> {
             tooltip: 'Add Contact',
             onPressed: () async {
               // Navigate to AddContactFormPage
-              final result = await  Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => BlocProvider(
-      create: (_) => StatesCubit()..fetchStates(),
-      child: const AddContactFormPage(),
-    ),
-  ),
-);
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => BlocProvider(
+                        create: (_) => StatesCubit()..fetchStates(),
+                        child: const AddContactFormPage(),
+                      ),
+                ),
+              );
               // After returning, refresh contacts
               if (result != null) _loadContacts();
             },
@@ -114,62 +120,70 @@ class _ContactsListPageState extends State<ContactsListPage> {
             ),
           ),
           Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                : _filteredContacts.isEmpty
+            child:
+                _loading
                     ? const Center(
-                        child: Text('No contacts found',
-                            style: TextStyle(color: Colors.white70)),
-                      )
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                    : _filteredContacts.isEmpty
+                    ? const Center(
+                      child: Text(
+                        'No contacts found',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
                     : ListView.separated(
-  itemCount: _filteredContacts.length,
-  separatorBuilder: (_, __) =>
-      Divider(color: Colors.grey[800], height: 1),
-  itemBuilder: (context, i) {
-    final c = _filteredContacts[i];
-    final phone = c.phones.isNotEmpty
-        ? c.phones.first.number
-        : 'No number';
+                      itemCount: _filteredContacts.length,
+                      separatorBuilder:
+                          (_, __) =>
+                              Divider(color: Colors.grey[800], height: 1),
+                      itemBuilder: (context, i) {
+                        final c = _filteredContacts[i];
+                        final phone =
+                            c.phones.isNotEmpty
+                                ? c.phones.first.number
+                                : 'No number';
 
-    return ListTile(
-      onTap: () {
-        
-      },
-      leading: const CircleAvatar(
-        backgroundColor: Colors.white10,
-        child: Icon(Icons.person, color: Colors.white),
-      ),
-      title: Text(
-        c.displayName,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w500,
-          fontSize: 14,
-        ),
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        phone,
-        style: const TextStyle(color: Colors.white54),
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: IconButton(
-        icon: const Icon(Icons.call, color: Colors.greenAccent),
-        onPressed: () {
-          if (c.phones.isNotEmpty) {
-            _callDirect(c.phones.first.number);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No phone number available')),
-            );
-          }
-        },
-      ),
-    );
-  },
-),
-
-
+                        return ListTile(
+                          onTap: () {},
+                          leading: const CircleAvatar(
+                            backgroundColor: Colors.white10,
+                            child: Icon(Icons.person, color: Colors.white),
+                          ),
+                          title: Text(
+                            c.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            phone,
+                            style: const TextStyle(color: Colors.white54),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.call,
+                              color: Colors.greenAccent,
+                            ),
+                            onPressed: () {
+                              if (c.phones.isNotEmpty) {
+                                _callDirect(c.phones.first.number);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('No phone number available'),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
           ),
         ],
       ),
