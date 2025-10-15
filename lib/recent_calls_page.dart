@@ -399,7 +399,7 @@ List<String> _extractPhones(dynamic c) {
                                         (_) => CustomerDetailsView(
                                           customerName: c.name ?? c.number,
                                           phoneNumber: c.number,
-                                          date: c.lastTime,
+                                          date: c.lastTime, stateName: null,
                                         ),
                                   ),
                                 ),

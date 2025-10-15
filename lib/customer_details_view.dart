@@ -7,12 +7,14 @@ class CustomerDetailsView extends StatefulWidget {
   final String customerName;
   final String phoneNumber;
   final dynamic date;
+  final String? stateName;
 
   const CustomerDetailsView({
     super.key,
     required this.customerName,
     required this.phoneNumber,
     required this.date,
+    required this.stateName,
   });
 
   @override
@@ -159,14 +161,15 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Ernakulam',
-                        style: TextStyle(
+                      Text(
+                        widget.stateName ?? '', // 👈 dynamic state name
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+
                       Row(
                         children: [
                           _circleAction(
