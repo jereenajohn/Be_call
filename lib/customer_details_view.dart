@@ -35,43 +35,46 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
     _fetchCalls();
   }
 
-  Future<void> _fetchCalls() async {
-    if (!await Permission.phone.request().isGranted) return;
+Future<void> _fetchCalls() async {
+  if (!await Permission.phone.request().isGranted) return;
 
-    final logs = await CallLog.query(number: widget.phoneNumber);
-    if (logs.isEmpty) return;
+  final logs = await CallLog.query(number: widget.phoneNumber);
+  if (logs.isEmpty) return;
 
-    final selectedDate =
-        widget.date is DateTime
-            ? widget.date as DateTime
-            : DateTime.parse(widget.date.toString());
+  // Define "today" and "yesterday" ranges
+  final now = DateTime.now();
+  final todayStart = DateTime(now.year, now.month, now.day);
+  final todayEnd = todayStart.add(const Duration(days: 1));
 
-    final start = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-    );
-    final end = start.add(const Duration(days: 1));
+  final yesterdayStart = todayStart.subtract(const Duration(days: 1));
+  final yesterdayEnd = todayStart;
 
-    final matching =
-        logs.where((c) {
-            final ts = DateTime.fromMillisecondsSinceEpoch(c.timestamp ?? 0);
-            return ts.isAfter(start) && ts.isBefore(end);
-          }).toList()
-          ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
+  // 1️⃣ Filter today's calls
+  List<CallLogEntry> filtered = logs.where((c) {
+    final ts = DateTime.fromMillisecondsSinceEpoch(c.timestamp ?? 0);
+    return ts.isAfter(todayStart) && ts.isBefore(todayEnd);
+  }).toList();
 
-    final now = DateTime.now();
-    final isToday =
-        start.year == now.year &&
-        start.month == now.month &&
-        start.day == now.day;
-
-    _headerDate =
-        isToday ? 'Today' : '${start.day}-${start.month}-${start.year}';
-
-    _displayCalls = matching;
-    setState(() {});
+  // 2️⃣ If no calls today → use yesterday
+  bool showingYesterday = false;
+  if (filtered.isEmpty) {
+    filtered = logs.where((c) {
+      final ts = DateTime.fromMillisecondsSinceEpoch(c.timestamp ?? 0);
+      return ts.isAfter(yesterdayStart) && ts.isBefore(yesterdayEnd);
+    }).toList();
+    showingYesterday = true;
   }
+
+  // Sort newest first
+  filtered.sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
+
+  // Set header text
+  _headerDate = showingYesterday ? 'Yesterday' : 'Today';
+
+  setState(() {
+    _displayCalls = filtered;
+  });
+}
 
   Future<void> _callDirect(String n) async =>
       FlutterPhoneDirectCaller.callNumber(n);

@@ -210,7 +210,8 @@ class _HomepageState extends State<Homepage> {
                                   (context) => CustomerDetailsView(
                                     customerName: name,
                                     phoneNumber: phone,
-                                    date: null,
+                                    date:
+                                        DateTime.now(), // 👈 send current date
                                     stateName: stateName,
                                   ),
                             ),
