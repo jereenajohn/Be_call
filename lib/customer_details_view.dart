@@ -206,64 +206,82 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                     ),
                   const SizedBox(height: 8),
 
-                  // Call log list
-                  if (widget.date != null)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child:
-                          _displayCalls.isEmpty
-                              ? const Text(
-                                'No call history',
-                                style: TextStyle(color: Colors.white70),
-                              )
-                              : Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children:
-                                    _displayCalls.map((c) {
-                                      final dt =
-                                          DateTime.fromMillisecondsSinceEpoch(
-                                            c.timestamp ?? 0,
-                                          );
-                                      final time =
-                                          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-                                      final dur = c.duration ?? 0;
-                                      final type = c.callType?.name ?? 'Call';
-                                      return Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '$time  $type',
+                  // ✅ NEW SECTION — Recent Calls
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Recent Calls',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_displayCalls.isEmpty)
+                          const Text(
+                            'No recent calls',
+                            style: TextStyle(color: Colors.white70),
+                          )
+                        else
+                          Column(
+                            children:
+                                _displayCalls.take(5).map((c) {
+                                  final dt =
+                                      DateTime.fromMillisecondsSinceEpoch(
+                                        c.timestamp ?? 0,
+                                      );
+                                  final date =
+                                      '${dt.day.toString().padLeft(2, '0')}-${dt.month.toString().padLeft(2, '0')}';
+                                  final time =
+                                      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                                  final dur = c.duration ?? 0;
+                                  final type = c.callType?.name ?? 'Call';
+
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 4.0,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            '$date $time',
                                             style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '$dur sec',
-                                            style: const TextStyle(
-                                              color: Colors.white54,
+                                              color: Colors.white70,
                                               fontSize: 14,
                                             ),
                                           ),
-                                          const Divider(
-                                            color: Colors.white24,
-                                            height: 16,
+                                        ),
+                                        Text(
+                                          '$type • ${dur}s',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                        ],
-                                      );
-                                    }).toList(),
-                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                      ],
                     ),
+                  ),
 
                   const SizedBox(height: 20),
 
-                  // Notes heading
+                  // ✅ Existing Notes section below remains same
                   const Text(
                     'Notes',
                     style: TextStyle(
@@ -274,7 +292,6 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                   ),
                   const SizedBox(height: 8),
 
-                  // Notes container with toggle
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -298,7 +315,6 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // Switch with text inside thumb
                         Transform.scale(
                           scale: 1.2,
                           child: Switch(
@@ -320,6 +336,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                   ),
 
                   const SizedBox(height: 20),
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
