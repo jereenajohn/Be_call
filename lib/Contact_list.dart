@@ -88,7 +88,7 @@ class _ContactsListPageState extends State<ContactsListPage> {
                   builder:
                       (context) => BlocProvider(
                         create: (_) => StatesCubit()..fetchStates(),
-                        child: const AddContactFormPage(),
+                        child: const AddContactFormPage(phoneNumber: '',),
                       ),
                 ),
               );
