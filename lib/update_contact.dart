@@ -39,17 +39,25 @@ class _UpdateContactState extends State<UpdateContact> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+
+   Future<int?> getid() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('id');
+  }
+
 Future<void> _fetchCustomers() async {
     var token = await getToken();
+    var id =
     setState(() => _loading = true);
+    var userid=await getid();
 
     try {
       var response = await https.get(
-        Uri.parse("$api/api/contact/info"),
+        Uri.parse("$api/api/contact/info/staff/$userid/"),
         headers: {"Authorization": "Bearer $token"},
       );
-print(response.statusCode);
-print(response.body);
+      print(response.statusCode);
+      print(response.body);
       if (response.statusCode == 200) {
         setState(() {
           _customers = List<dynamic>.from(jsonDecode(response.body));

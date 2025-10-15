@@ -3,6 +3,7 @@ import 'package:be_call/api.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:be_call/call_report.dart';
 
 class CallDetailPage extends StatefulWidget {
   final Map<String, dynamic> call;
@@ -116,7 +117,12 @@ class _CallDetailPageState extends State<CallDetailPage> {
                 : "Call updated successfully"),
           ),
         );
-        Navigator.pop(context, true);
+          Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CallReport(),
+        ),
+      );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Failed to update (${response.statusCode})")),

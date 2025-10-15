@@ -31,6 +31,10 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+   Future<int?> getid() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('id');
+  }
 
   @override
   void initState() {
@@ -42,16 +46,21 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
   bool _loading = true;
 
   Future<void> _fetchCustomers() async {
-    var token = await getToken();
-    setState(() => _loading = true);
+    print("Fetching customers...");
 
+    var token = await getToken();
+    var id = await getid();
+        print("$api/api/contact/info/staff/$id/");
+
+    setState(() => _loading = true);
+print("$api/api/contact/info/staff/$id/");
     try {
       var response = await https.get(
-        Uri.parse("$api/api/contact/info"),
+        Uri.parse("$api/api/contact/info/staff/$id/"),
         headers: {"Authorization": "Bearer $token"},
       );
 print(response.statusCode);
-print(response.body);
+print("response.bodyyyyyyyy${response.body}");
       if (response.statusCode == 200) {
         setState(() {
           _customers = List<dynamic>.from(jsonDecode(response.body));
@@ -98,7 +107,7 @@ print(response.body);
 
     try {
       var response = await https.post(
-        Uri.parse("$api/api/contact/info"),
+        Uri.parse("$api/api/contact/info/"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
