@@ -66,6 +66,11 @@ class _DialerPageState extends State<DialerPage> {
   }
 
   void _appendDigit(String digit) {
+    // Only allow up to 10 digits (excluding non-digit characters)
+    final digitsOnly = enteredNumber.replaceAll(RegExp(r'\D'), '');
+    if (digitsOnly.length >= 10 && RegExp(r'\d').hasMatch(digit)) {
+      return;
+    }
     setState(() {
       enteredNumber += digit;
       _searchCustomer(enteredNumber);
