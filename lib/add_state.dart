@@ -22,18 +22,18 @@ class StatesCubit extends Cubit<StatesState> {
       final url = Uri.parse("$api/api/states/");
       final response = await http.get(
         url,
-        headers: {
-          "Authorization": "Bearer $token",
-        },
+        headers: {"Authorization": "Bearer $token"},
       );
-print("response.statusCode");
+      print("response.statusCode");
       print(response.body);
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-      final List<dynamic> data = jsonResponse['data'] ?? [];
+        final List<dynamic> data = jsonResponse['data'] ?? [];
         emit(StatesLoaded(data));
       } else {
-        emit(StatesError("Failed to load states. Code: ${response.statusCode}"));
+        emit(
+          StatesError("Failed to load states. Code: ${response.statusCode}"),
+        );
       }
     } catch (e) {
       emit(StatesError("Error: $e"));
@@ -42,12 +42,16 @@ print("response.statusCode");
 }
 
 abstract class StatesState {}
+
 class StatesInitial extends StatesState {}
+
 class StatesLoading extends StatesState {}
+
 class StatesLoaded extends StatesState {
   final List<dynamic> states;
   StatesLoaded(this.states);
 }
+
 class StatesError extends StatesState {
   final String error;
   StatesError(this.error);
@@ -94,7 +98,10 @@ class _AddstateFormPageState extends State<AddstateFormPage> {
                 listener: (context, state) {
                   if (state is AddStateSuccess) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.message), backgroundColor: accent),
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: accent,
+                      ),
                     );
                     _formKey.currentState?.reset();
                     _stateCtrl.clear();
@@ -102,7 +109,10 @@ class _AddstateFormPageState extends State<AddstateFormPage> {
                     context.read<StatesCubit>().fetchStates();
                   } else if (state is AddStateError) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.error), backgroundColor: Colors.red),
+                      SnackBar(
+                        content: Text(state.error),
+                        backgroundColor: Colors.red,
+                      ),
                     );
                   }
                 },
@@ -123,30 +133,40 @@ class _AddstateFormPageState extends State<AddstateFormPage> {
                                 value: _selectedCountryId,
                                 decoration: InputDecoration(
                                   labelText: "Country",
-                                  labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                                  labelStyle: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                  ),
                                   filled: true,
                                   fillColor: Colors.grey[900],
                                   enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+                                    borderSide: BorderSide(
+                                      color: Colors.white.withOpacity(0.5),
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   focusedBorder: OutlineInputBorder(
-                                    borderSide: const BorderSide(color: Colors.white),
+                                    borderSide: const BorderSide(
+                                      color: Colors.white,
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                                 dropdownColor: Colors.grey[900],
                                 iconEnabledColor: Colors.white,
                                 style: const TextStyle(color: Colors.white),
-                                items: cState.countries.map((c) {
-                                  return DropdownMenuItem<int>(
-                                    value: c['id'],
-                                    child: Text(c['name']),
-                                  );
-                                }).toList(),
-                                onChanged: (v) => setState(() => _selectedCountryId = v),
-                                validator: (v) =>
-                                    v == null ? 'Select a country' : null,
+                                items:
+                                    cState.countries.map((c) {
+                                      return DropdownMenuItem<int>(
+                                        value: c['id'],
+                                        child: Text(c['name']),
+                                      );
+                                    }).toList(),
+                                onChanged:
+                                    (v) =>
+                                        setState(() => _selectedCountryId = v),
+                                validator:
+                                    (v) =>
+                                        v == null ? 'Select a country' : null,
                               );
                             } else if (cState is CountriesError) {
                               return Text(
@@ -165,19 +185,27 @@ class _AddstateFormPageState extends State<AddstateFormPage> {
                           controller: _stateCtrl,
                           decoration: InputDecoration(
                             labelText: "State Name",
-                            labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                            labelStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                            ),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+                              borderSide: BorderSide(
+                                color: Colors.white.withOpacity(0.5),
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                              borderSide: const BorderSide(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
                             fillColor: Colors.grey[900],
                           ),
-                          validator: (v) => v!.isEmpty ? 'Enter State name' : null,
+                          validator:
+                              (v) => v!.isEmpty ? 'Enter State name' : null,
                           style: const TextStyle(color: Colors.white),
                         ),
 
@@ -191,20 +219,29 @@ class _AddstateFormPageState extends State<AddstateFormPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          onPressed: addState is AddStateLoading
-                              ? null
-                              : () {
-                                  if (_formKey.currentState!.validate()) {
-                                    context.read<AddStateCubit>().saveState(
-                                      _stateCtrl.text,
-                                      _selectedCountryId,
-                                    );
-                                  }
-                                },
-                          child: addState is AddStateLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text('Save',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          onPressed:
+                              addState is AddStateLoading
+                                  ? null
+                                  : () {
+                                    if (_formKey.currentState!.validate()) {
+                                      context.read<AddStateCubit>().saveState(
+                                        _stateCtrl.text,
+                                        _selectedCountryId,
+                                      );
+                                    }
+                                  },
+                          child:
+                              addState is AddStateLoading
+                                  ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                  : const Text(
+                                    'Save',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                         ),
 
                         const SizedBox(height: 28),
@@ -213,46 +250,70 @@ class _AddstateFormPageState extends State<AddstateFormPage> {
                         BlocBuilder<StatesCubit, StatesState>(
                           builder: (context, sState) {
                             if (sState is StatesLoading) {
-                              return const Center(child: CircularProgressIndicator());
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
                             } else if (sState is StatesLoaded) {
                               if (sState.states.isEmpty) {
-                                return const Text("No states yet",
-                                    style: TextStyle(color: Colors.white));
+                                return const Text(
+                                  "No states yet",
+                                  style: TextStyle(color: Colors.white),
+                                );
                               }
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text("States:",
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold)),
+                                  const Text(
+                                    "States:",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   const SizedBox(height: 8),
-                                  ...sState.states.map((st) => Card(
-                                        color: Colors.grey[900],
-                                        child: ListTile(
-  title: Text(
-    st['name'],
-    style: const TextStyle(color: Colors.white),
-  ),
-  subtitle: () {
-    final country = st['country'];
-    if (country is Map) {
-      return Text("Country: ${country['name']}",
-          style: TextStyle(color: Colors.white.withOpacity(0.7)));
-    } else {
-      return Text("Country: $country",
-          style: TextStyle(color: Colors.white.withOpacity(0.7)));
-    }
-  }(),
-),
-
-                                      )),
+                                  ...sState.states.map(
+                                    (st) => Card(
+                                      color: Colors.grey[900],
+                                      child: ListTile(
+                                        title: Text(
+                                          st['name'],
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        subtitle: () {
+                                          final country = st['country'];
+                                          if (country is Map) {
+                                            return Text(
+                                              "Country: ${country['name']}",
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(
+                                                  0.7,
+                                                ),
+                                              ),
+                                            );
+                                          } else {
+                                            return Text(
+                                              "Country: $country",
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(
+                                                  0.7,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        }(),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               );
                             } else if (sState is StatesError) {
-                              return Text("Error: ${sState.error}",
-                                  style: const TextStyle(color: Colors.red));
+                              return Text(
+                                "Error: ${sState.error}",
+                                style: const TextStyle(color: Colors.red),
+                              );
                             }
                             return const SizedBox.shrink();
                           },
