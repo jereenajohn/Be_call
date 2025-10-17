@@ -45,91 +45,97 @@ class _CallReportState extends State<CallReport> {
     }
     return null;
   }
-DateTimeRange? selectedRange;
 
- Future<void> fetchCallReports({DateTimeRange? range}) async {
-  try {
-    var token = await getToken();
-    var userId = await getUserId();
-    var user = await getUserDetails();
+  DateTimeRange? selectedRange;
 
-    if (userId == null) {
-      print("No user id found in SharedPreferences");
-      return;
-    }
+  Future<void> fetchCallReports({DateTimeRange? range}) async {
+    try {
+      var token = await getToken();
+      var userId = await getUserId();
+      var user = await getUserDetails();
 
-    final activeResponse = await http.get(
-      Uri.parse('$api/api/call/report/staff/$userId/'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    final productiveResponse = await http.get(
-      Uri.parse('$api/api/call/report/staff/$userId/?type=productive'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    print('Active response: ${activeResponse.statusCode}');
-    print('Productive response: ${productiveResponse.statusCode}');
-
-    if (activeResponse.statusCode == 200 &&
-        productiveResponse.statusCode == 200) {
-      final activeData = json.decode(activeResponse.body);
-      final productiveData = json.decode(productiveResponse.body);
-
-      // Determine date range
-      DateTime today = DateTime.now();
-      DateTime start = range?.start ?? DateTime(today.year, today.month, today.day);
-      DateTime end = range?.end ?? DateTime(today.year, today.month, today.day);
-
-      bool isWithinRange(String? dateString) {
-        if (dateString == null || dateString.isEmpty) return false;
-        try {
-          // Convert from UTC/ISO + timezone to local date
-          DateTime date = DateTime.parse(dateString).toLocal();
-
-          // Compare only Y-M-D (ignore time)
-          DateTime callDate = DateTime(date.year, date.month, date.day);
-          DateTime startDate = DateTime(start.year, start.month, start.day);
-          DateTime endDate = DateTime(end.year, end.month, end.day);
-
-          return !callDate.isBefore(startDate) && !callDate.isAfter(endDate);
-        } catch (e) {
-          return false;
-        }
+      if (userId == null) {
+        print("No user id found in SharedPreferences");
+        return;
       }
 
-      // Apply filtering to both lists
-      List<dynamic> filteredActive = activeData.where((call) {
-        return isWithinRange(call['date'] ?? call['created_at']);
-      }).toList();
-
-      List<dynamic> filteredProductive = productiveData.where((call) {
-        return isWithinRange(call['date'] ?? call['created_at']);
-      }).toList();
-
-      setState(() {
-        activeCalls = filteredActive;
-        productiveCalls = filteredProductive;
-        userDetails = user;
-        isLoading = false;
-      });
-
-      print('Fetched ${filteredActive.length} active calls and ${filteredProductive.length} productive calls');
-    } else {
-      setState(() {
-        isLoading = false;
-        userDetails = user;
-      });
-      print(
-        'Error fetching call report: Active=${activeResponse.statusCode}, Productive=${productiveResponse.statusCode}',
+      final activeResponse = await http.get(
+        Uri.parse('$api/api/call/report/staff/$userId/'),
+        headers: {'Authorization': 'Bearer $token'},
       );
-    }
-  } catch (e) {
-    setState(() => isLoading = false);
-    print('Exception: $e');
-  }
-}
 
+      final productiveResponse = await http.get(
+        Uri.parse('$api/api/call/report/staff/$userId/?type=productive'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      print('Active response: ${activeResponse.statusCode}');
+      print('Productive response: ${productiveResponse.statusCode}');
+
+      if (activeResponse.statusCode == 200 &&
+          productiveResponse.statusCode == 200) {
+        final activeData = json.decode(activeResponse.body);
+        final productiveData = json.decode(productiveResponse.body);
+
+        // Determine date range
+        DateTime today = DateTime.now();
+        DateTime start =
+            range?.start ?? DateTime(today.year, today.month, today.day);
+        DateTime end =
+            range?.end ?? DateTime(today.year, today.month, today.day);
+
+        bool isWithinRange(String? dateString) {
+          if (dateString == null || dateString.isEmpty) return false;
+          try {
+            // Convert from UTC/ISO + timezone to local date
+            DateTime date = DateTime.parse(dateString).toLocal();
+
+            // Compare only Y-M-D (ignore time)
+            DateTime callDate = DateTime(date.year, date.month, date.day);
+            DateTime startDate = DateTime(start.year, start.month, start.day);
+            DateTime endDate = DateTime(end.year, end.month, end.day);
+
+            return !callDate.isBefore(startDate) && !callDate.isAfter(endDate);
+          } catch (e) {
+            return false;
+          }
+        }
+
+        // Apply filtering to both lists
+        List<dynamic> filteredActive =
+            activeData.where((call) {
+              return isWithinRange(call['date'] ?? call['created_at']);
+            }).toList();
+
+        List<dynamic> filteredProductive =
+            productiveData.where((call) {
+              return isWithinRange(call['date'] ?? call['created_at']);
+            }).toList();
+
+        setState(() {
+          activeCalls = filteredActive;
+          productiveCalls = filteredProductive;
+          userDetails = user;
+          isLoading = false;
+        });
+
+        print(
+          'Fetched ${filteredActive.length} active calls and ${filteredProductive.length} productive calls',
+        );
+      } else {
+        setState(() {
+          isLoading = false;
+          userDetails = user;
+        });
+        print(
+          'Error fetching call report: Active=${activeResponse.statusCode}, Productive=${productiveResponse.statusCode}',
+        );
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      print('Exception: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -187,54 +193,78 @@ DateTimeRange? selectedRange;
                         ),
                       const SizedBox(height: 20),
                       Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Expanded(
-      child: Text(
-        selectedRange == null
-            ? 'Showing: Today'
-            : 'From: ${selectedRange!.start.toString().split(" ")[0]}  →  To: ${selectedRange!.end.toString().split(" ")[0]}',
-        style: const TextStyle(color: Colors.white, fontSize: 14),
-      ),
-    ),
-    ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(255, 26, 164, 143),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-      onPressed: () async {
-        final DateTime now = DateTime.now();
-        final picked = await showDateRangePicker(
-          context: context,
-          firstDate: DateTime(now.year - 1),
-          lastDate: DateTime(now.year + 1),
-          initialDateRange: selectedRange ??
-              DateTimeRange(
-                start: DateTime(now.year, now.month, now.day),
-                end: DateTime(now.year, now.month, now.day),
-              ),
-        );
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedRange == null
+                                  ? 'Showing: Today'
+                                  : 'From: ${selectedRange!.start.toString().split(" ")[0]}  →  To: ${selectedRange!.end.toString().split(" ")[0]}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                26,
+                                164,
+                                143,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onPressed: () async {
+                              final DateTime now = DateTime.now();
+                              final picked = await showDateRangePicker(
+                                context: context,
+                                firstDate: DateTime(now.year - 1),
+                                lastDate: DateTime(now.year + 1),
+                                initialDateRange:
+                                    selectedRange ??
+                                    DateTimeRange(
+                                      start: DateTime(
+                                        now.year,
+                                        now.month,
+                                        now.day,
+                                      ),
+                                      end: DateTime(
+                                        now.year,
+                                        now.month,
+                                        now.day,
+                                      ),
+                                    ),
+                              );
 
-        if (picked != null) {
-          setState(() {
-            selectedRange = picked;
-            isLoading = true;
-          });
-          await fetchCallReports(range: picked);
-        }
-      },
-      icon: const Icon(Icons.calendar_month, color: Colors.white, size: 18),
-      label: const Text(
-        'Select Dates',
-        style: TextStyle(color: Colors.white, fontSize: 13),
-      ),
-    ),
-  ],
-),
+                              if (picked != null) {
+                                setState(() {
+                                  selectedRange = picked;
+                                  isLoading = true;
+                                });
+                                await fetchCallReports(range: picked);
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.calendar_month,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Select Dates',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 20),
-                    Container(
+                      Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 14,
@@ -265,9 +295,8 @@ DateTimeRange? selectedRange;
                         ),
                       ),
                       const SizedBox(height: 16),
-// 📅 Date Range Selector
 
-
+                      // 📅 Date Range Selector
                       _expandableTable(
                         title: 'Active Calls',
                         data:
@@ -309,287 +338,389 @@ DateTimeRange? selectedRange;
     );
   }
 
-Widget _expandableTable({
-  required String title,
-  required List<dynamic> data,
-}) {
-  final isProductive = title == 'Productive Calls';
+  Widget _expandableTable({
+    required String title,
+    required List<dynamic> data,
+  }) {
+    final isProductive = title == 'Productive Calls';
 
-  // ✅ FIXED FUNCTION
-  String getTotalDuration() {
-    int totalSeconds = 0;
+    // ✅ FIXED FUNCTION
+    String getTotalDuration() {
+      int totalSeconds = 0;
 
-    for (var call in data) {
-      final dynamic duration = call['duration'];
-      if (duration == null) continue;
+      for (var call in data) {
+        final dynamic duration = call['duration'];
+        if (duration == null) continue;
 
-      String durationStr = duration.toString().trim().toLowerCase();
+        String durationStr = duration.toString().trim().toLowerCase();
 
-      // Handle formats like "20 sec", "15s", "1 min 30 sec", etc.
-      if (durationStr.contains('min') || durationStr.contains('sec')) {
-        int minutes = 0;
-        int seconds = 0;
+        // Handle formats like "20 sec", "15s", "1 min 30 sec", etc.
+        if (durationStr.contains('min') || durationStr.contains('sec')) {
+          int minutes = 0;
+          int seconds = 0;
 
-        final minMatch = RegExp(r'(\d+)\s*min').firstMatch(durationStr);
-        final secMatch = RegExp(r'(\d+)\s*sec').firstMatch(durationStr);
+          final minMatch = RegExp(r'(\d+)\s*min').firstMatch(durationStr);
+          final secMatch = RegExp(r'(\d+)\s*sec').firstMatch(durationStr);
 
-        if (minMatch != null) minutes = int.parse(minMatch.group(1)!);
-        if (secMatch != null) seconds = int.parse(secMatch.group(1)!);
+          if (minMatch != null) minutes = int.parse(minMatch.group(1)!);
+          if (secMatch != null) seconds = int.parse(secMatch.group(1)!);
 
-        totalSeconds += minutes * 60 + seconds;
-        continue;
+          totalSeconds += minutes * 60 + seconds;
+          continue;
+        }
+
+        // Handle "HH:MM:SS" or "MM:SS" formats
+        final parts =
+            durationStr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
+        if (parts.length == 3) {
+          totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
+        } else if (parts.length == 2) {
+          totalSeconds += parts[0] * 60 + parts[1];
+        } else if (parts.length == 1) {
+          totalSeconds += parts.first;
+        }
       }
 
-      // Handle "HH:MM:SS" or "MM:SS" formats
-      final parts = durationStr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
-      if (parts.length == 3) {
-        totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
-      } else if (parts.length == 2) {
-        totalSeconds += parts[0] * 60 + parts[1];
-      } else if (parts.length == 1) {
-        totalSeconds += parts.first;
-      }
+      final hours = totalSeconds ~/ 3600;
+      final minutes = (totalSeconds % 3600) ~/ 60;
+      final seconds = totalSeconds % 60;
+
+      return '${hours.toString().padLeft(2, '0')}:'
+          '${minutes.toString().padLeft(2, '0')}:'
+          '${seconds.toString().padLeft(2, '0')}';
     }
 
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
+    String getTotalAmount() {
+      double total = data.fold<double>(0, (double sum, dynamic call) {
+        final amount = call['amount'];
+        if (amount == null) return sum;
+        return sum +
+            (amount is num
+                ? amount.toDouble()
+                : double.tryParse(amount.toString()) ?? 0);
+      });
+      return total.toStringAsFixed(2);
+    }
 
-    return '${hours.toString().padLeft(2, '0')}:'
-        '${minutes.toString().padLeft(2, '0')}:'
-        '${seconds.toString().padLeft(2, '0')}';
-  }
-
-  String getTotalAmount() {
-    double total = data.fold<double>(0, (double sum, dynamic call) {
-      final amount = call['amount'];
-      if (amount == null) return sum;
-      return sum +
-          (amount is num
-              ? amount.toDouble()
-              : double.tryParse(amount.toString()) ?? 0);
-    });
-    return total.toStringAsFixed(2);
-  }
-
-  return Container(
-    decoration: BoxDecoration(
-      color: const Color.fromARGB(255, 26, 164, 143),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent), // ✅ removes top/bottom lines
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        collapsedIconColor: Colors.white,
-        iconColor: Colors.white,
-        backgroundColor: Colors.transparent,
-        collapsedBackgroundColor: Colors.transparent,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 26, 164, 143),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ), // ✅ removes top/bottom lines
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          collapsedIconColor: Colors.white,
+          iconColor: Colors.white,
+          backgroundColor: Colors.transparent,
+          collapsedBackgroundColor: Colors.transparent,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              Text(
+                '${data.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
           children: [
-            Text(
-              title,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowColor: MaterialStateProperty.all(
+                    const Color(0xFF00695C),
+                  ),
+                  border: TableBorder.all(color: Colors.white, width: 1),
+                  columns:
+                      isProductive
+                          ? const [
+                            DataColumn(
+                              label: Text(
+                                'No.',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
+                                'Invoice',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
+                                'Amount',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ]
+                          : const [
+                            DataColumn(
+                              label: Text(
+                                'No.',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
+                                'Customer',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
+                                'Duration',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ],
+                  rows:
+                      data.isNotEmpty
+                          ? data.asMap().entries.map((entry) {
+                            final index = entry.key + 1;
+                            final call = entry.value;
+                            return DataRow(
+                              cells:
+                                  isProductive
+                                      ? [
+                                        DataCell(
+                                          Text(
+                                            '$index',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            call['invoice']?.toString() ??
+                                                'N/A',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                call['amount']?.toString() ??
+                                                    'N/A',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.arrow_forward_ios,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
+                                                onPressed: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder:
+                                                          (context) =>
+                                                              CallDetailPage(
+                                                                call: call,
+                                                              ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ]
+                                      : [
+                                        DataCell(
+                                          Text(
+                                            '$index',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            call['customer_name'] ?? 'N/A',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SizedBox(
+                                                width: 60,
+                                                child: Text(
+                                                  call['duration'] ?? 'N/A',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 10,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.arrow_forward_ios,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
+                                                onPressed: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder:
+                                                          (context) =>
+                                                              CallDetailPage(
+                                                                call: call,
+                                                              ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                            );
+                          }).toList()
+                          : [
+                            DataRow(
+                              cells:
+                                  isProductive
+                                      ? const [
+                                        DataCell(
+                                          Text(
+                                            '-',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            'No Calls',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            '-',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ]
+                                      : const [
+                                        DataCell(
+                                          Text(
+                                            '-',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            'No Calls',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            '-',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                            ),
+                          ],
+                ),
+              ),
             ),
-            Text(
-              '${data.length}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child:
+                    isProductive
+                        ? Text(
+                          'Total Amount: ₹${getTotalAmount()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        )
+                        : Text(
+                          'Total Duration: ${getTotalDuration()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
               ),
             ),
           ],
         ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor: MaterialStateProperty.all(const Color(0xFF00695C)),
-                border: TableBorder.all(color: Colors.white, width: 1),
-                columns: isProductive
-                    ? const [
-                        DataColumn(
-                          label: Text(
-                            'No.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Invoice',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Amount',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ]
-                    : const [
-                        DataColumn(
-                          label: Text(
-                            'No.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Customer',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            'Duration',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ],
-                rows: data.isNotEmpty
-                    ? data.asMap().entries.map((entry) {
-                        final index = entry.key + 1;
-                        final call = entry.value;
-                        return DataRow(
-                          cells: isProductive
-                              ? [
-                                  DataCell(Text('$index',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 10))),
-                                  DataCell(Text(call['invoice']?.toString() ?? 'N/A',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 10))),
-                                  DataCell(Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(call['amount']?.toString() ?? 'N/A',
-                                          style: const TextStyle(
-                                              color: Colors.white, fontSize: 10)),
-                                      IconButton(
-                                        icon: const Icon(Icons.arrow_forward_ios,
-                                            color: Colors.white, size: 16),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  CallDetailPage(call: call),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  )),
-                                ]
-                              : [
-                                  DataCell(Text('$index',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 10))),
-                                  DataCell(Text(call['customer_name'] ?? 'N/A',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 10))),
-                                  DataCell(Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SizedBox(
-                                        width: 60,
-                                        child: Text(call['duration'] ?? 'N/A',
-                                            style: const TextStyle(
-                                                color: Colors.white, fontSize: 10),
-                                            overflow: TextOverflow.ellipsis),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.arrow_forward_ios,
-                                            color: Colors.white, size: 16),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  CallDetailPage(call: call),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  )),
-                                ],
-                        );
-                      }).toList()
-                    : [
-                        DataRow(
-                          cells: isProductive
-                              ? const [
-                                  DataCell(Text('-', style: TextStyle(color: Colors.white))),
-                                  DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
-                                  DataCell(Text('-', style: TextStyle(color: Colors.white))),
-                                ]
-                              : const [
-                                  DataCell(Text('-', style: TextStyle(color: Colors.white))),
-                                  DataCell(Text('No Calls', style: TextStyle(color: Colors.white))),
-                                  DataCell(Text('-', style: TextStyle(color: Colors.white))),
-                                ],
-                        ),
-                      ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: isProductive
-                  ? Text(
-                      'Total Amount: ₹${getTotalAmount()}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    )
-                  : Text(
-                      'Total Duration: ${getTotalDuration()}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-            ),
-          ),
-        ],
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

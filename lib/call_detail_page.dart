@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:be_call/api.dart';
+import 'package:be_call/homepage.dart';
 import 'package:http/http.dart' as https;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
@@ -307,8 +308,12 @@ class _CallDetailPageState extends State<CallDetailPage> {
                 ? "✅ Call marked as Productive"
                 : "Call updated successfully")));
 
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => const CallReport()));
+      Navigator.pushAndRemoveUntil(
+  context,
+  MaterialPageRoute(builder: (context) => const Homepage(initialIndex: 3)),
+  (route) => false,
+);
+
       }
     } catch (e) {
       ScaffoldMessenger.of(context)
