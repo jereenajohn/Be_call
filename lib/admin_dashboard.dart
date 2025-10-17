@@ -404,7 +404,8 @@ print("State Summary: $stateSummary");
             const SizedBox(height: 20),
 
             // Summary Cards
-            _buildSectionTitle("Today's Summary"),
+            _buildSectionTitle("Today's Summary - ${DateFormat('dd MMM yyyy').format(DateTime.now())}"),
+
                         const SizedBox(height: 5),
 
 
@@ -422,7 +423,8 @@ print("State Summary: $stateSummary");
             ),
                         const SizedBox(height: 15),
 
-            _buildSectionTitle("Monthly Summary"),
+            _buildSectionTitle("Monthly Summary - ${DateFormat('MMMM yyyy').format(DateTime.now())}"),
+
                         const SizedBox(height: 5),
 
 
@@ -441,7 +443,7 @@ print("State Summary: $stateSummary");
 
             const SizedBox(height: 30),
        // 🟢 STAFF PERFORMANCE OVERVIEW
-_buildSectionTitle("Staff Performance Overview"),
+_buildSectionTitle("Staff Performance (Top 3)"),
 const SizedBox(height: 10),
 Container(
   width: double.infinity,
@@ -582,7 +584,7 @@ Container(
 const SizedBox(height: 25),
 
 // 🟢 STATE WISE SUMMARY
-_buildSectionTitle("State Wise Summary"),
+_buildSectionTitle("State Wise Summary (Top 3)"),
 const SizedBox(height: 10),
 Container(
   width: double.infinity,
