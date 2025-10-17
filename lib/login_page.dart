@@ -29,11 +29,12 @@ class _LoginPageState extends State<LoginPage> {
   
 Future login(String email, String password, BuildContext context) async {
   try {
+    print("Attempting login with email: $email");
     var response = await http.post(
       Uri.parse('$api/api/login/'),
       body: {"username": email, "password": password},
     );
-
+print(response.statusCode);
     print("ressssssssssssss${response.body}");
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
@@ -109,12 +110,15 @@ Future login(String email, String password, BuildContext context) async {
         if (responseData['message'] != null) {
           errorMessage = responseData['message'];
         }
-      } catch (_) {}
+      } catch (_) {
+
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(backgroundColor: Colors.red, content: Text(errorMessage)),
       );
     }
   } catch (e) {
+    print("Login error: $e");
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         backgroundColor: Colors.red,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:be_call/api.dart';
 import 'package:be_call/callreport_date_wise.dart';
+import 'package:be_call/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as https;
@@ -22,6 +23,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   double totalAmount = 0.0;
   List<Map<String, dynamic>> groupedData = [];
   bool isLoading = true;
+List<dynamic> allCalls = [];
+  List<dynamic> filteredCalls = [];
 
   DateTime? startDate;
   DateTime? endDate;
@@ -34,6 +37,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _fetchUser();
     _loadUserName();
     _fetchDashboardSummary();
+    fetchCallReports();
 
     // Fetch today's data
     final today = DateTime.now();
@@ -140,6 +144,44 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
+   Future<void> fetchCallReports() async {
+    try {
+      var token = await getToken();
+      var userId = await getUserId();
+
+      if (userId == null) {
+        print("❌ No user id found in SharedPreferences");
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('$api/api/call/report/'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      print('🟡 Status Code: ${response.statusCode}');
+      print('🟡 Response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          allCalls = data;
+          filteredCalls = allCalls; // Initially show all calls
+print("All Calls: $allCalls");
+         
+          isLoading = false;
+        });
+        print("✅ Loaded ${allCalls.length} call records");
+      } else {
+        setState(() => isLoading = false);
+        print('❌ Error fetching reports');
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      print('⚠️ Exception: $e');
+    }
+  }
+
   Future<void> _fetchDashboardSummary() async {
     var token = await getToken();
 
@@ -195,6 +237,42 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget build(BuildContext context) {
     const Color bgColor = Colors.black;
 
+    Map<String, Map<String, dynamic>> stateSummary = {};
+
+    for (var call in filteredCalls) {
+      // Enhanced state detection
+      String state = '';
+      if (call['state'] != null && call['state'].toString().trim().isNotEmpty) {
+        state = call['state'].toString();
+      } else if (call['state_name'] != null &&
+          call['state_name'].toString().trim().isNotEmpty) {
+        state = call['state_name'].toString();
+      } else {
+        state = 'Unknown';
+      }
+
+      String status = (call['status'] ?? '').toString();
+      double amount = double.tryParse(call['amount']?.toString() ?? '0') ?? 0.0;
+
+      if (!stateSummary.containsKey(state)) {
+        stateSummary[state] = {
+          'Active': 0,
+          'Productive': 0,
+          'Amount': 0.0,
+        };
+      }
+
+      if (status == 'Active') {
+        stateSummary[state]!['Active']++;
+      } 
+      else if (status == 'Productive')
+      {
+        stateSummary[state]!['Productive']++;
+        stateSummary[state]!['Amount'] += amount;
+      }
+    }
+print("State Summary: $stateSummary");
+
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
@@ -213,19 +291,58 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
         ),
         centerTitle: false, // ✅ aligns title to the left
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white,
-              child: Icon(
-                Icons.person,
-                color: Color.fromARGB(255, 26, 164, 143),
+       actions: [
+  Padding(
+    padding: const EdgeInsets.only(right: 16),
+    child: GestureDetector(
+      onTap: () async {
+        // Confirm logout (optional)
+        final shouldLogout = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Logout'),
+            content: const Text('Are you sure you want to log out?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
               ),
-            ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Logout'),
+              ),
+            ],
           ),
-        ],
+        );
+
+        if (shouldLogout ?? false) {
+          // Clear stored token and role
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('token');
+          await prefs.remove('role');
+
+          // Navigate back to LoginPage
+          if (context.mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+              (route) => false,
+            );
+          }
+        }
+      },
+      child: const CircleAvatar(
+        radius: 18,
+        backgroundColor: Colors.white,
+        child: Icon(
+          Icons.person,
+          color: Color.fromARGB(255, 26, 164, 143),
+        ),
+      ),
+    ),
+  ),
+],
+
       ),
 
       body: SingleChildScrollView(
@@ -238,7 +355,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               "Welcome back, ${_username ?? 'Admin'} 👋",
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -279,7 +396,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       26,
                       164,
                       143,
-                    ).withOpacity(0.25),
+                    ).withOpacity(0.45),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -410,7 +527,124 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 10),
+          
+// 📊 State Summary Section
+_buildSectionTitle("State Summary"),
+const SizedBox(height: 10),
+Container(
+  padding: const EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Colors.grey[900],
+    borderRadius: BorderRadius.circular(14),
+    boxShadow: [
+      BoxShadow(
+        color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.45),
+        blurRadius: 8,
+        offset: const Offset(0, 3),
+      ),
+    ],
+  ),
+  child: stateSummary.isEmpty
+      ? const Center(
+          child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              "No state data available",
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ),
+        )
+      : Column(
+          children: [
+            // Header Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: const [
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    "State",
+                    style: TextStyle(
+                      color: Colors.tealAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+               
+                Expanded(
+                  child: Text(
+                    "Productive",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.tealAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    "Amount",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.tealAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(color: Colors.white24),
+            // Data Rows
+            ...stateSummary.entries.map((entry) {
+              final state = entry.key;
+              final data = entry.value;
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFF101010),
+                ),
+                margin: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        state,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    
+                    Expanded(
+                      child: Text(
+                        "${data['Productive']}",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        "₹${(data['Amount'] as double).toStringAsFixed(2)}",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 26, 164, 143),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+),
+const SizedBox(height: 30),
+
+
 
             // Financial Summary
             _buildSectionTitle("Financial Summary"),
@@ -463,7 +697,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.teal.withOpacity(0.25),
+              color: Colors.teal.withOpacity(0.45),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
