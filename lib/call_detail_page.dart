@@ -32,87 +32,95 @@ class _CallDetailPageState extends State<CallDetailPage> {
   bool _loading = true;
   bool _stateLoading = true;
 
- @override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  // ✅ Safely handle both object and integer for "Customer"
-  dynamic customerData = widget.call['Customer'];
-  Map<String, dynamic>? customer;
+    // ✅ Safely handle both object and integer for "Customer"
+    dynamic customerData = widget.call['Customer'];
+    Map<String, dynamic>? customer;
 
-  if (customerData is Map<String, dynamic>) {
-    // if backend returned full customer object
-    customer = customerData;
-  } else {
-    // if backend only returned an ID (int)
-    customer = null;
-  }
-
-  // ✅ Try to get name properly
-  final fullName = customer != null
-      ? '${customer['first_name'] ?? ''} ${customer['last_name'] ?? ''}'.trim()
-      : widget.call['customer_name'] ?? '';
-
-  final nameParts = fullName.split(' ');
-  final firstName = nameParts.isNotEmpty ? nameParts.first : '';
-  final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
-
-  // ✅ Properly handle email (check multiple possible sources)
-  String email = '';
-  if (widget.call['email'] != null &&
-      widget.call['email'].toString().isNotEmpty) {
-    email = widget.call['email'];
-  } else if (customer != null &&
-      customer['email'] != null &&
-      customer['email'].toString().isNotEmpty) {
-    email = customer['email'];
-  }
-
-  // ✅ Initialize controllers
-  firstNameController = TextEditingController(text: firstName);
-  lastNameController = TextEditingController(text: lastName);
-  emailController = TextEditingController(text: email);
-  durationController =
-      TextEditingController(text: widget.call['duration'] ?? '');
-  phoneController = TextEditingController(text: widget.call['phone'] ?? '');
-  invoiceController = TextEditingController(text: widget.call['invoice'] ?? '');
-  amountController =
-      TextEditingController(text: widget.call['amount']?.toString() ?? '');
-  descriptionController =
-      TextEditingController(text: widget.call['description'] ?? '');
-  noteController = TextEditingController(text: widget.call['note'] ?? '');
-
-  _selectedState = null;
-  _fetchStates();
-
-  // ✅ Optional: if only Customer ID given, auto-fetch details
-  if (widget.call['Customer'] is int) {
-    _fetchCustomerEmail(widget.call['Customer']);
-  }
-}
-
-Future<void> _fetchCustomerEmail(int id) async {
-  try {
-    final token = await getToken();
-    final url = Uri.parse('$api/api/contact/info/$id/');
-    final response =
-        await https.get(url, headers: {"Authorization": "Bearer $token"});
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        emailController.text = data['email'] ?? '';
-        firstNameController.text = data['first_name'] ?? '';
-        lastNameController.text = data['last_name'] ?? '';
-      });
-      print("📩 Loaded contact info from ID $id");
+    if (customerData is Map<String, dynamic>) {
+      // if backend returned full customer object
+      customer = customerData;
     } else {
-      print("⚠️ Could not fetch contact info ($id): ${response.statusCode}");
+      // if backend only returned an ID (int)
+      customer = null;
     }
-  } catch (e) {
-    print("⚠️ Error fetching contact info: $e");
-  }
-}
 
+    // ✅ Try to get name properly
+    final fullName =
+        customer != null
+            ? '${customer['first_name'] ?? ''} ${customer['last_name'] ?? ''}'
+                .trim()
+            : widget.call['customer_name'] ?? '';
+
+    final nameParts = fullName.split(' ');
+    final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+    final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
+    // ✅ Properly handle email (check multiple possible sources)
+    String email = '';
+    if (widget.call['email'] != null &&
+        widget.call['email'].toString().isNotEmpty) {
+      email = widget.call['email'];
+    } else if (customer != null &&
+        customer['email'] != null &&
+        customer['email'].toString().isNotEmpty) {
+      email = customer['email'];
+    }
+
+    // ✅ Initialize controllers
+    firstNameController = TextEditingController(text: firstName);
+    lastNameController = TextEditingController(text: lastName);
+    emailController = TextEditingController(text: email);
+    durationController = TextEditingController(
+      text: widget.call['duration'] ?? '',
+    );
+    phoneController = TextEditingController(text: widget.call['phone'] ?? '');
+    invoiceController = TextEditingController(
+      text: widget.call['invoice'] ?? '',
+    );
+    amountController = TextEditingController(
+      text: widget.call['amount']?.toString() ?? '',
+    );
+    descriptionController = TextEditingController(
+      text: widget.call['description'] ?? '',
+    );
+    noteController = TextEditingController(text: widget.call['note'] ?? '');
+
+    _selectedState = null;
+    _fetchStates();
+
+    // ✅ Optional: if only Customer ID given, auto-fetch details
+    if (widget.call['Customer'] is int) {
+      // _fetchCustomerEmail(widget.call['Customer']);
+    }
+  }
+
+  // Future<void> _fetchCustomerEmail(int id) async {
+  //   try {
+  //     final token = await getToken();
+  //     final url = Uri.parse('$api/api/contact/info/$id/');
+  //     final response = await https.get(
+  //       url,
+  //       headers: {"Authorization": "Bearer $token"},
+  //     );
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       setState(() {
+  //         emailController.text = data['email'] ?? '';
+  //         firstNameController.text = data['first_name'] ?? '';
+  //         lastNameController.text = data['last_name'] ?? '';
+  //       });
+  //       print("📩 Loaded contact info from ID $id");
+  //     } else {
+  //       print("⚠️ Could not fetch contact info ($id): ${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     print("⚠️ Error fetching contact info: $e");
+  //   }
+  // }
 
   Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -312,8 +320,11 @@ Future<void> _fetchCustomerEmail(int id) async {
             ),
           ),
         );
-      
-        Navigator.push(context, MaterialPageRoute(builder: (context)=>CallReport()));
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => CallReport()),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Failed to update (${response.statusCode})")),
