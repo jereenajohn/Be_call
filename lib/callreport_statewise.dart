@@ -25,7 +25,7 @@ class _CallreportStatewiseState extends State<CallreportStatewise> {
   void initState() {
     super.initState();
     fetchCallReports();
-    
+
   }
 
   Future<String?> getToken() async {
@@ -85,7 +85,7 @@ class _CallreportStatewiseState extends State<CallreportStatewise> {
   /// ✅ Utility to filter data between dates
 List<dynamic> _filterByDateRange(List<dynamic> data, DateTime start, DateTime end) {
   return data.where((call) {
-    final createdAt = call['created_at'];
+    final createdAt = call['date'];
     if (createdAt == null) return false;
 
     try {

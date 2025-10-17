@@ -99,10 +99,10 @@ getDateWise();
 
       // ✅ Filter only today's records
       List<dynamic> data = allData.where((call) {
-        if (call['created_at'] == null && call['created'] == null) return false;
+        if (call['date'] == null && call['created'] == null) return false;
         try {
           // handle both possible keys
-          String dateStr = call['created_at'] ?? call['created'];
+          String dateStr = call['date'] ?? call['created'];
           DateTime createdDate = DateTime.parse(dateStr).toLocal();
           String createdStr = DateFormat('yyyy-MM-dd').format(createdDate);
           return createdStr == todayStr;
@@ -183,9 +183,9 @@ getDateWise();
 
       // Filter only today’s calls
       List<dynamic> todayCalls = data.where((call) {
-        if (call["created_at"] == null) return false;
+        if (call["date"] == null) return false;
         try {
-          DateTime createdDate = DateTime.parse(call["created_at"]).toLocal();
+          DateTime createdDate = DateTime.parse(call["date"]).toLocal();
           String createdStr = "${createdDate.year}-${createdDate.month.toString().padLeft(2, '0')}-${createdDate.day.toString().padLeft(2, '0')}";
           return createdStr == todayStr;
         } catch (e) {
