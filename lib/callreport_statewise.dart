@@ -25,6 +25,7 @@ class _CallreportStatewiseState extends State<CallreportStatewise> {
   void initState() {
     super.initState();
     fetchCallReports();
+    
   }
 
   Future<String?> getToken() async {
@@ -180,7 +181,9 @@ List<dynamic> _filterByDateRange(List<dynamic> data, DateTime start, DateTime en
 
       if (status == 'Active') {
         stateSummary[state]!['Active']++;
-      } else if (status == 'Productive') {
+      } 
+      else if (status == 'Productive')
+      {
         stateSummary[state]!['Productive']++;
         stateSummary[state]!['Amount'] += amount;
       }

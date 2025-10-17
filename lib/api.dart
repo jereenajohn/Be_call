@@ -1,1 +1,1 @@
-var api="https://bepocart.in";
+const String api = "https://bepocart.in";

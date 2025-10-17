@@ -372,8 +372,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       const Divider(color: Colors.black54, height: 1),
                       _settingsTile(
                         icon: Icons.folder,
-                        label: 'Labels',
-                        onTap: () {},
+                        label: 'Logout',
+                        onTap: () {
+                          
+
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
                       ),
                     ],
                   ),
