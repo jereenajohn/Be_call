@@ -10,7 +10,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Homepage extends StatefulWidget {
-  const Homepage({super.key});
+  final int initialIndex;
+  const Homepage({super.key, this.initialIndex = 0});
 
   @override
   State<Homepage> createState() => _HomepageState();
@@ -26,6 +27,7 @@ class _HomepageState extends State<Homepage> {
   void initState() {
     super.initState();
     _fetchCustomers();
+      _selectedIndex = widget.initialIndex;
   }
 
   Future<String?> getToken() async {
