@@ -26,6 +26,8 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   List<dynamic> _customers = [];
+  Map<String, dynamic>? _user;
+  bool _loading = true;
 
   int _selectedIndex = 1; // Contacts is default
 
@@ -84,33 +86,35 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
+    return prefs.getString('token');
   }
 
   Future<void> _fetchUser() async {
     var token = await getToken();
-    var userId = await getUserId();
-    print("User ID from prefs: $userId");
-    print(token);
-    if (userId == null) {
-      print("No user id found in SharedPreferences");
-      return;
-    }
+    print("🔹 Token: $token");
+    if (token == null) return;
 
     try {
-      var response = await https.get(
-        Uri.parse("$api/api/users/$userId/"),
+      final response = await https.get(
+        Uri.parse("$api/api/profile/"),
         headers: {"Authorization": "Bearer $token"},
       );
 
+      print("🔹 Status: ${response.statusCode}");
+      print("🔹 Body: ${response.body}");
+
       if (response.statusCode == 200) {
+        final jsonBody = jsonDecode(response.body);
         setState(() {
-          _customers = [jsonDecode(response.body)];
+          _user = jsonBody['data']; // ✅ only take the 'data' field
+          _loading = false;
         });
       } else {
+        setState(() => _loading = false);
         print("Failed to load user: ${response.statusCode}");
       }
     } catch (e) {
+      setState(() => _loading = false);
       print("Error: $e");
     }
   }
@@ -128,26 +132,19 @@ class _SettingsPageState extends State<SettingsPage> {
         body: jsonEncode({"name": newName}),
       );
 
-      print("$api/api/users/$userId/");
-      print("Request Body: ${jsonEncode({"name": newName})}");
-      print("Response Status: ${response.statusCode}");
-      print("Response Body: ${response.body}");
-      if (response.statusCode == 200) {
-        print("Name updated successfully");
-      } else {
-        print("Failed to update name: ${response.statusCode}");
-      }
+      print("🟢 PUT → $api/api/users/$userId/");
+      print("Body: ${jsonEncode({"name": newName})}");
+      print("Response: ${response.statusCode} → ${response.body}");
     } catch (e) {
       print("Error updating name: $e");
     }
   }
-  // ...existing code...
 
   String? _editedName;
 
   void _showEditNameDialog() {
     TextEditingController controller = TextEditingController(
-      text: _customers.isNotEmpty ? _customers[0]['name'] ?? '' : '',
+      text: _user?['name'] ?? '',
     );
     showDialog(
       context: context,
@@ -179,20 +176,16 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 26, 164, 143),
+                backgroundColor: const Color(0xFF1AA48F),
               ),
               onPressed: () async {
-                if (_customers.isNotEmpty) {
-                  setState(() {
-                    _customers[0]['name'] = controller.text;
-                    _editedName = controller.text;
-                  });
-                  int? userId = await getUserId();
-                  if (userId != null) {
-                    await _updateUserName(userId, controller.text);
-                  }
-                }
+                setState(() {
+                  _user?['name'] = controller.text;
+                });
                 Navigator.pop(context);
+                if (_user?['id'] != null) {
+                  await _updateUserName(_user!['id'], controller.text);
+                }
               },
               child: const Text('Save', style: TextStyle(color: Colors.white)),
             ),
@@ -224,43 +217,57 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 30),
 
                 // Profile icon and text
+                // Profile icon and text
                 Center(
                   child: Column(
                     children: [
                       CircleAvatar(
                         radius: 40,
-                        backgroundColor: const Color.fromARGB(255, 26, 164, 143),
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          26,
+                          164,
+                          143,
+                        ),
                         child: const Icon(
                           Icons.person,
                           color: Colors.black,
-                          size: 50,
+                          size: 40,
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _customers.isNotEmpty && _customers[0]['name'] != null
-                                ? _customers[0]['name']
-                                : '',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.edit,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            onPressed: _showEditNameDialog,
-                            tooltip: 'Edit Name',
-                          ),
-                        ],
+
+                      // ✅ Display user name
+                      Text(
+                        _user?['name'] ?? '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
+
+                      // ✅ Display family name below
+                      if (_user?['family_name'] != null)
+                        Text(
+                          "Family: ${_user!['family_name']}",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+
+                      // Edit icon for name
+                      // IconButton(
+                      //   icon: const Icon(
+                      //     Icons.edit,
+                      //     color: Colors.white,
+                      //     size: 18,
+                      //   ),
+                      //   onPressed: _showEditNameDialog,
+                      //   tooltip: 'Edit Name',
+                      // ),
                     ],
                   ),
                 ),
@@ -275,7 +282,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Column(
                     children: [
-                        _settingsTile(
+                      _settingsTile(
                         icon: Icons.person_2,
                         label: 'datewise Call Report',
                         onTap: () {
@@ -288,7 +295,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         },
                       ),
                       const Divider(color: Colors.black54, height: 1),
-                       _settingsTile(
+                      _settingsTile(
                         icon: Icons.person_2,
                         label: 'state wise Call Report',
                         onTap: () {
@@ -374,8 +381,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         icon: Icons.folder,
                         label: 'Logout',
                         onTap: () {
-                          
-
                           Navigator.pushReplacementNamed(context, '/login');
                         },
                       ),
