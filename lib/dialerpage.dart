@@ -116,9 +116,9 @@ class _DialerPageState extends State<DialerPage> {
     if (await _ensureCallPermission()) {
       await FlutterPhoneDirectCaller.callNumber(number);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Call permissions denied')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Call permissions denied')));
     }
   }
 
@@ -140,10 +140,12 @@ class _DialerPageState extends State<DialerPage> {
                   const SizedBox(height: 80),
 
                   // 👇 Show customer or add contact button
-                              if (enteredNumber.isNotEmpty)
+                  if (enteredNumber.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       child: Column(
                         children: [
                           if (matchedCustomer != null)
@@ -151,7 +153,8 @@ class _DialerPageState extends State<DialerPage> {
                               onTap: () {
                                 setState(() {
                                   enteredNumber =
-                                      matchedCustomer!['phone'] ?? enteredNumber;
+                                      matchedCustomer!['phone'] ??
+                                      enteredNumber;
                                   numberSelected = true;
                                 });
                               },
@@ -162,10 +165,15 @@ class _DialerPageState extends State<DialerPage> {
                                         .trim()
                                         .replaceAll(RegExp(r'\s+'), ' '),
                                     style: TextStyle(
-                                      color: numberSelected
-                                          ? const Color.fromARGB(
-                                              255, 26, 164, 143)
-                                          : Colors.grey,
+                                      color:
+                                          numberSelected
+                                              ? const Color.fromARGB(
+                                                255,
+                                                26,
+                                                164,
+                                                143,
+                                              )
+                                              : Colors.grey,
                                       fontSize: 22,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -173,7 +181,9 @@ class _DialerPageState extends State<DialerPage> {
                                   Text(
                                     matchedCustomer!['phone'] ?? '',
                                     style: const TextStyle(
-                                        color: Colors.white70, fontSize: 18),
+                                      color: Colors.white70,
+                                      fontSize: 18,
+                                    ),
                                   ),
                                   if (!numberSelected)
                                     const Padding(
@@ -181,8 +191,9 @@ class _DialerPageState extends State<DialerPage> {
                                       child: Text(
                                         "Tap to select this number",
                                         style: TextStyle(
-                                            color: Colors.white38,
-                                            fontSize: 12),
+                                          color: Colors.white38,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -195,9 +206,10 @@ class _DialerPageState extends State<DialerPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => AddContactFormPage(
-                                      phoneNumber: enteredNumber,
-                                    ),
+                                    builder:
+                                        (_) => AddContactFormPage(
+                                          phoneNumber: enteredNumber,
+                                        ),
                                   ),
                                 ).then((_) {
                                   // Optionally refresh customer list after returning
@@ -207,8 +219,12 @@ class _DialerPageState extends State<DialerPage> {
                               icon: const Icon(Icons.person_add_alt_1),
                               label: const Text("Add Contact"),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    const Color.fromARGB(255, 26, 164, 143),
+                                backgroundColor: const Color.fromARGB(
+                                  255,
+                                  26,
+                                  164,
+                                  143,
+                                ),
                                 foregroundColor: Colors.black,
                               ),
                             ),
@@ -234,7 +250,10 @@ class _DialerPageState extends State<DialerPage> {
                         ),
                         if (enteredNumber.isNotEmpty)
                           IconButton(
-                            icon: const Icon(Icons.backspace, color: Colors.white),
+                            icon: const Icon(
+                              Icons.backspace,
+                              color: Colors.white,
+                            ),
                             onPressed: _deleteDigit,
                           ),
                       ],
@@ -258,42 +277,45 @@ class _DialerPageState extends State<DialerPage> {
                             padding: const EdgeInsets.symmetric(vertical: 12.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: row
-                                  .map(
-                                    (label) => GestureDetector(
-                                      onTap: () => _appendDigit(label),
-                                      child: CircleAvatar(
-                                        radius: 35,
-                                        backgroundColor: Colors.grey[850],
-                                        child: Text(
-                                          label,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 28,
+                              children:
+                                  row
+                                      .map(
+                                        (label) => GestureDetector(
+                                          onTap: () => _appendDigit(label),
+                                          child: CircleAvatar(
+                                            radius: 35,
+                                            backgroundColor: Colors.grey[850],
+                                            child: Text(
+                                              label,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 28,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
+                                      )
+                                      .toList(),
                             ),
                           ),
                         const SizedBox(height: 20),
 
-                        // 🟢 CALL ICON — only active after selection
+                        // 🟢 CALL ICON — only active after selectionxcv
                         GestureDetector(
-                          onTap: canCall
-                              ? () {
-                                  if (enteredNumber.isNotEmpty) {
-                                    _makeDirectCall(enteredNumber);
+                          onTap:
+                              canCall
+                                  ? () {
+                                    if (enteredNumber.isNotEmpty) {
+                                      _makeDirectCall(enteredNumber);
+                                    }
                                   }
-                                }
-                              : null,
+                                  : null,
                           child: CircleAvatar(
                             radius: 40,
-                            backgroundColor: canCall
-                                ? const Color.fromARGB(255, 26, 164, 143)
-                                : Colors.grey[800],
+                            backgroundColor:
+                                canCall
+                                    ? const Color.fromARGB(255, 26, 164, 143)
+                                    : Colors.grey[800],
                             child: Icon(
                               Icons.call,
                               color: canCall ? Colors.black : Colors.grey,
