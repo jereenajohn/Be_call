@@ -41,7 +41,7 @@ List<dynamic> allCalls = [];
 
     // Fetch today's data
     final today = DateTime.now();
-    getDateWise(today, today);
+getDateWise();
   }
 
   Future<int?> getUserId() async {
@@ -75,112 +75,143 @@ List<dynamic> allCalls = [];
     return totalSeconds;
   }
 
-  Future<void> getDateWise(DateTime from, DateTime to) async {
-    setState(() {
-      isLoading = true;
-    });
+  Future<void> getDateWise() async {
+  setState(() {
+    isLoading = true;
+  });
 
-    var token = await getToken();
-    String fromStr = DateFormat('yyyy-MM-dd').format(from);
-    String toStr = DateFormat('yyyy-MM-dd').format(to);
+  var token = await getToken();
 
-    try {
-      var res = await http.get(
-        Uri.parse("$api/api/call/report/?from=$fromStr&to=$toStr"),
-        headers: {"Authorization": "Bearer $token"},
-      );
+  DateTime today = DateTime.now();
+  String todayStr = DateFormat('yyyy-MM-dd').format(today);
 
-      if (res.statusCode != 200) {
-        // fallback to single-day endpoint
-        res = await http.get(
-          Uri.parse("$api/api/call/report/date/$fromStr/"),
-          headers: {"Authorization": "Bearer $token"},
-        );
-      }
+  try {
+    var res = await http.get(
+      Uri.parse("$api/api/call/report/"),
+      headers: {"Authorization": "Bearer $token"},
+    );
 
-      if (res.statusCode == 200) {
-        List<dynamic> data = jsonDecode(res.body);
-        Map<String, Map<String, dynamic>> grouped = {};
+    print("🟡 Status Code: ${res.statusCode}");
+    print("🟡 Response: ${res.body}");
 
-        for (var call in data) {
-          String name = call['created_by_name'] ?? 'Unknown';
-          String status = call['status'] ?? '';
-          String durationStr = call['duration'] ?? '0 sec';
-          double amount = (call['amount'] ?? 0).toDouble();
+    if (res.statusCode == 200) {
+      List<dynamic> allData = jsonDecode(res.body);
 
-          if (status.toLowerCase() == 'productive') {
-            grouped.putIfAbsent(
-              name,
-              () => {'count': 0, 'duration': 0, 'amount': 0.0},
-            );
-
-            grouped[name]!['count'] += 1;
-            grouped[name]!['duration'] += parseDuration(durationStr);
-            grouped[name]!['amount'] += amount;
-          }
+      // ✅ Filter only today's records
+      List<dynamic> data = allData.where((call) {
+        if (call['created_at'] == null && call['created'] == null) return false;
+        try {
+          // handle both possible keys
+          String dateStr = call['created_at'] ?? call['created'];
+          DateTime createdDate = DateTime.parse(dateStr).toLocal();
+          String createdStr = DateFormat('yyyy-MM-dd').format(createdDate);
+          return createdStr == todayStr;
+        } catch (e) {
+          print("⚠️ Date parse error: $e");
+          return false;
         }
+      }).toList();
 
-        setState(() {
-          groupedData =
-              grouped.entries
-                  .map(
-                    (e) => {
-                      'name': e.key,
-                      'count': e.value['count'],
-                      'duration': e.value['duration'],
-                      'amount': e.value['amount'],
-                    },
-                  )
-                  .toList();
-          isLoading = false;
-        });
-      } else {
-        print("Failed: ${res.statusCode}");
-        setState(() => isLoading = false);
+      print("📅 Filtered today's calls: ${data.length}");
+
+      Map<String, Map<String, dynamic>> grouped = {};
+
+      for (var call in data) {
+        String name = call['created_by_name'] ?? 'Unknown';
+        String status = call['status'] ?? '';
+        String durationStr = call['duration'] ?? '0 sec';
+        double amount = (call['amount'] ?? 0).toDouble();
+
+        if (status.toLowerCase() == 'productive') {
+          grouped.putIfAbsent(
+            name,
+            () => {'count': 0, 'duration': 0, 'amount': 0.0},
+          );
+
+          grouped[name]!['count'] += 1;
+          grouped[name]!['duration'] += parseDuration(durationStr);
+          grouped[name]!['amount'] += amount;
+        }
       }
-    } catch (e) {
-      print("Error: $e");
+
+      setState(() {
+        groupedData = grouped.entries
+            .map((e) => {
+                  'name': e.key,
+                  'count': e.value['count'],
+                  'duration': e.value['duration'],
+                  'amount': e.value['amount'],
+                })
+            .toList();
+        isLoading = false;
+      });
+
+      print("✅ Final grouped today data count: ${groupedData.length}");
+    } else {
+      print("❌ Failed: ${res.statusCode}");
       setState(() => isLoading = false);
     }
+  } catch (e) {
+    print("⚠️ Error: $e");
+    setState(() => isLoading = false);
   }
+}
 
-   Future<void> fetchCallReports() async {
-    try {
-      var token = await getToken();
-      var userId = await getUserId();
 
-      if (userId == null) {
-        print("❌ No user id found in SharedPreferences");
-        return;
-      }
+ Future<void> fetchCallReports() async {
+  try {
+    var token = await getToken();
+    var userId = await getUserId();
 
-      final response = await http.get(
-        Uri.parse('$api/api/call/report/'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      print('🟡 Status Code: ${response.statusCode}');
-      print('🟡 Response: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          allCalls = data;
-          filteredCalls = allCalls; // Initially show all calls
-print("All Calls: $allCalls");
-         
-          isLoading = false;
-        });
-        print("✅ Loaded ${allCalls.length} call records");
-      } else {
-        setState(() => isLoading = false);
-        print('❌ Error fetching reports');
-      }
-    } catch (e) {
-      setState(() => isLoading = false);
-      print('⚠️ Exception: $e');
+    if (userId == null) {
+      print("❌ No user id found in SharedPreferences");
+      return;
     }
+
+    final response = await http.get(
+      Uri.parse('$api/api/call/report/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    print('🟡 Status Code: ${response.statusCode}');
+    print('🟡 Response: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      DateTime today = DateTime.now();
+      String todayStr = "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+
+      // Filter only today’s calls
+      List<dynamic> todayCalls = data.where((call) {
+        if (call["created_at"] == null) return false;
+        try {
+          DateTime createdDate = DateTime.parse(call["created_at"]).toLocal();
+          String createdStr = "${createdDate.year}-${createdDate.month.toString().padLeft(2, '0')}-${createdDate.day.toString().padLeft(2, '0')}";
+          return createdStr == todayStr;
+        } catch (e) {
+          print("⚠️ Date parse error for call: $e");
+          return false;
+        }
+      }).toList();
+
+      setState(() {
+        allCalls = data;
+        filteredCalls = todayCalls;
+        isLoading = false;
+      });
+
+      print("✅ Loaded ${allCalls.length} total calls");
+      print("✅ Filtered ${filteredCalls.length} calls for today ($todayStr)");
+    } else {
+      setState(() => isLoading = false);
+      print('❌ Error fetching reports');
+    }
+  } catch (e) {
+    setState(() => isLoading = false);
+    print('⚠️ Exception: $e');
   }
+}
+
 
   Future<void> _fetchDashboardSummary() async {
     var token = await getToken();
