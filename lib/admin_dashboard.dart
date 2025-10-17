@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:be_call/api.dart';
 import 'package:be_call/callreport_date_wise.dart';
+import 'package:be_call/callreport_statewise.dart';
 import 'package:be_call/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +21,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   List<dynamic> _customers = [];
   int totalRecords = 0; 
   int productiveCount = 0;
+  int activeCount = 0;
   double totalAmount = 0.0;
+   int productiveCountmonthly = 0;
+  int activeCountmonthly = 0;
+  double totalAmountmonthly = 0.0;
   List<Map<String, dynamic>> groupedData = [];
   bool isLoading = true;
 List<dynamic> allCalls = [];
@@ -226,9 +231,15 @@ getDateWise();
         final data = jsonDecode(response.body);
 
         setState(() {
-          totalRecords = data['total_records'] ?? 0;
-          productiveCount = data['productive_count'] ?? 0;
-          totalAmount = data['total_amount'] ?? 0.0;
+          totalRecords = data['today_summary']['total_records'] ?? 0;
+          productiveCount = data['today_summary']['productive_count'] ?? 0;
+          totalAmount = data['today_summary']['total_amount'] ?? 0.0;
+          activeCount = data['today_summary']['active_count'] ?? 0;
+          productiveCountmonthly = data['current_month_summary']['productive_count'] ?? 0;
+          totalAmountmonthly = data['current_month_summary']['total_amount'] ?? 0.0;
+          activeCountmonthly = data['current_month_summary']['active_count'] ?? 0;
+
+
         });
       } else {
         print("❌ Failed to load dashboard data: ${response.statusCode}");
@@ -382,297 +393,326 @@ print("State Summary: $stateSummary");
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Greeting
-            Text(
-              "Welcome back, ${_username ?? 'Admin'} 👋",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 25),
+            // Text(
+            //   "Welcome back, ${_username ?? 'Admin'} 👋",
+            //   style: const TextStyle(
+            //     color: Colors.white,
+            //     fontSize: 15,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
+            const SizedBox(height: 20),
 
             // Summary Cards
+            _buildSectionTitle("Today's Summary"),
+                        const SizedBox(height: 5),
+
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoCard(Icons.people, "Staffs", "65"),
+                _buildInfoCard(Icons.people, "Active calls", "$activeCount"),
                 _buildInfoCard(
                   Icons.receipt_long_rounded,
                   "Invoices",
                   "$productiveCount",
                 ),
-                _buildInfoCard(Icons.call, "Calls", "$totalRecords"),
+                _buildInfoCard(Icons.currency_rupee, "Amount", "$totalAmount"),
+              ],
+            ),
+                        const SizedBox(height: 15),
+
+            _buildSectionTitle("Monthly Summary"),
+                        const SizedBox(height: 5),
+
+
+             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildInfoCard(Icons.people, "Active calls", "$activeCountmonthly"),
+                _buildInfoCard(
+                  Icons.receipt_long_rounded,
+                  "Invoices",
+                  "$productiveCountmonthly",
+                ),
+                _buildInfoCard(Icons.currency_rupee, "Amount", "$totalAmountmonthly"),
               ],
             ),
 
             const SizedBox(height: 30),
-            // Staff Performance Overview Section
-            _buildSectionTitle("Staff Performance Overview"),
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0E0E0E), Color(0xFF1A1A1A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color.fromARGB(
-                      255,
-                      26,
-                      164,
-                      143,
-                    ).withOpacity(0.45),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Header Row
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color.fromARGB(255, 26, 164, 143),
-                          Color.fromARGB(255, 18, 110, 96),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color.fromARGB(
-                            255,
-                            26,
-                            164,
-                            143,
-                          ).withOpacity(0.4),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 8,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: const [
-                        _HeaderText(icon: Icons.person_outline, label: "Staff"),
-                        _HeaderText(
-                          icon: Icons.access_time,
-                          label: "Total Duration",
-                        ),
-                        _HeaderText(
-                          icon: Icons.call,
-                          label: "Productive Calls",
-                        ),
-                        _HeaderText(
-                          icon: Icons.currency_rupee,
-                          label: "Total Amount",
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-
-                  // Data Rows
-                  // Data Rows (dynamic)
-                  isLoading
-                      ? const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(
-                          color: Color.fromARGB(255, 26, 164, 143),
-                        ),
-                      )
-                      : Column(
-                        children:
-                            groupedData.isEmpty
-                                ? const [
-                                  Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: Text(
-                                      "No data available for today",
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                ]
-                                : groupedData.asMap().entries.map((entry) {
-                                  final i = entry.key;
-                                  final item = entry.value;
-                                  final hours =
-                                      (item['duration'] / 3600).floor();
-                                  final minutes =
-                                      ((item['duration'] % 3600) / 60).floor();
-
-                                  return _FancyRow(
-                                    item['name'],
-                                    "${hours}h ${minutes}m",
-                                    item['count'].toString(),
-                                    "₹${item['amount'].toStringAsFixed(2)}",
-                                    i.isEven,
-                                  );
-                                }).toList(),
-                      ),
-
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CallreportDateWise(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(
-                        Icons.arrow_forward_ios,
-                        color: Color.fromARGB(255, 26, 164, 143),
-                        size: 15,
-                      ),
-                      label: const Text(
-                        "See More",
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 26, 164, 143),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 10),
-          
-// 📊 State Summary Section
-_buildSectionTitle("State Summary"),
+       // 🟢 STAFF PERFORMANCE OVERVIEW
+_buildSectionTitle("Staff Performance Overview"),
 const SizedBox(height: 10),
 Container(
-  padding: const EdgeInsets.all(12),
+  width: double.infinity,
   decoration: BoxDecoration(
-    color: Colors.grey[900],
+    color: const Color(0xFF101010),
     borderRadius: BorderRadius.circular(14),
-    boxShadow: [
-      BoxShadow(
-        color: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.45),
-        blurRadius: 8,
-        offset: const Offset(0, 3),
+    border: Border.all(color: Colors.white24, width: 1),
+  ),
+  child: Table(
+    border: TableBorder.symmetric(
+      inside: const BorderSide(color: Colors.white24, width: 0.5),
+      outside: const BorderSide(color: Colors.white24, width: 1),
+    ),
+    columnWidths: const {
+      0: FlexColumnWidth(2),
+      1: FlexColumnWidth(2),
+      2: FlexColumnWidth(2),
+      3: FlexColumnWidth(2),
+    },
+    children: [
+      // Header Row
+      const TableRow(
+        decoration: BoxDecoration(color: Color.fromARGB(255, 26, 164, 143)),
+        children: [
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Staff",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Duration",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Productive",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Total",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+
+      // ✅ Data Rows (Top 3 by Productive Count)
+      ...(() {
+        final sorted =
+            List<Map<String, dynamic>>.from(groupedData)..sort((a, b) => b['count'].compareTo(a['count']));
+        final top3 = sorted.take(3).toList();
+
+        return top3.map((item) {
+          final hours = (item['duration'] / 3600).floor();
+          final minutes = ((item['duration'] % 3600) / 60).floor();
+          return TableRow(
+            decoration: const BoxDecoration(color: Color(0xFF181818)),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(item['name'],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text("${hours}h ${minutes}m",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text("${item['count']}",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text("₹${item['amount'].toStringAsFixed(0)}",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        }).toList();
+      })(),
+
+      // ✅ “See More” Row
+      TableRow(
+        decoration: const BoxDecoration(color: Color(0xFF151515)),
+        children: [
+          
+          const TableCell(child: SizedBox()), // empty columns
+          const TableCell(child: SizedBox()),
+          const TableCell(child: SizedBox()),
+          TableCell(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CallreportDateWise(),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Center(
+                  child: Text(
+                    "See More→",
+                    style: TextStyle(
+                      color: const Color.fromARGB(255, 26, 164, 143),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     ],
   ),
-  child: stateSummary.isEmpty
-      ? const Center(
-          child: Padding(
+),
+
+
+const SizedBox(height: 25),
+
+// 🟢 STATE WISE SUMMARY
+_buildSectionTitle("State Wise Summary"),
+const SizedBox(height: 10),
+Container(
+  width: double.infinity,
+  decoration: BoxDecoration(
+    color: const Color(0xFF101010),
+    borderRadius: BorderRadius.circular(14),
+    border: Border.all(color: Colors.white24, width: 1),
+  ),
+  child: Table(
+    border: TableBorder.symmetric(
+      inside: const BorderSide(color: Colors.white24, width: 0.5),
+      outside: const BorderSide(color: Colors.white24, width: 1),
+    ),
+    columnWidths: const {
+      0: FlexColumnWidth(3),
+      1: FlexColumnWidth(2),
+      2: FlexColumnWidth(2),
+    },
+    children: [
+      // Header Row
+      const TableRow(
+        decoration: BoxDecoration(color: Color.fromARGB(255, 26, 164, 143)),
+        children: [
+          Padding(
             padding: EdgeInsets.all(8.0),
-            child: Text(
-              "No state data available",
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+            child: Text("State",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Productive",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text("Amount",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+        ],
+      ),
+
+      // ✅ Data Rows (Top 3 States by Productive Count)
+      ...(() {
+        // Convert to a list for sorting
+        final entries = stateSummary.entries.toList();
+
+        // Sort by Productive count descending
+        entries.sort((a, b) =>
+            (b.value['Productive'] as int).compareTo(a.value['Productive'] as int));
+
+        // Take top 3 states
+        final top3 = entries.take(3).toList();
+
+        // Map to TableRow widgets
+        return top3.map((entry) {
+          final state = entry.key;
+          final data = entry.value;
+          return TableRow(
+            decoration: const BoxDecoration(color: Color(0xFF181818)),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(state,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text("${data['Productive']}",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                    "₹${(data['Amount'] as double).toStringAsFixed(0)}",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        }).toList();
+      })(),
+
+      // ✅ “See More” Row
+      TableRow(
+        decoration: const BoxDecoration(color: Color(0xFF151515)),
+        children: [
+         
+          const TableCell(child: SizedBox()),
+          const TableCell(child: SizedBox()),
+           TableCell(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CallreportStatewise(),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Center(
+                  child: Text(
+                    "See More →",
+                    style: TextStyle(
+                      color: const Color.fromARGB(255, 26, 164, 143),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        )
-      : Column(
-          children: [
-            // Header Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "State",
-                    style: TextStyle(
-                      color: Colors.tealAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-               
-                Expanded(
-                  child: Text(
-                    "Productive",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.tealAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    "Amount",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.tealAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Divider(color: Colors.white24),
-            // Data Rows
-            ...stateSummary.entries.map((entry) {
-              final state = entry.key;
-              final data = entry.value;
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: const Color(0xFF101010),
-                ),
-                margin: const EdgeInsets.symmetric(vertical: 3),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        state,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    
-                    Expanded(
-                      child: Text(
-                        "${data['Productive']}",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        "₹${(data['Amount'] as double).toStringAsFixed(2)}",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color.fromARGB(255, 26, 164, 143),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ],
-        ),
+        ],
+      ),
+    ],
+  ),
 ),
+
+
 const SizedBox(height: 30),
 
 
@@ -728,7 +768,7 @@ const SizedBox(height: 30),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.teal.withOpacity(0.45),
+              color: Colors.teal.withOpacity(0.65),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
