@@ -27,7 +27,7 @@ class _HomepageState extends State<Homepage> {
   void initState() {
     super.initState();
     _fetchCustomers();
-      _selectedIndex = widget.initialIndex;
+    _selectedIndex = widget.initialIndex;
   }
 
   Future<String?> getToken() async {
@@ -191,34 +191,71 @@ class _HomepageState extends State<Homepage> {
                       final phone = customer['phone'] ?? 'N/A';
                       final stateName = customer['state_name'] ?? 'N/A';
 
-                      return ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.person, color: Colors.black),
-                        ),
-                        title: Text(
-                          name.isNotEmpty ? name : 'Unknown',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        subtitle: Text(
-                          phone,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => CustomerDetailsView(
-                                    customerName: name,
-                                    phoneNumber: phone,
-                                    date:
-                                        DateTime.now(), // 👈 send current date
-                                    stateName: stateName,
-                                  ),
+                      return Column(
+                        children: [
+                          ListTile(
+                            leading: const CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(Icons.person, color: Colors.black),
                             ),
-                          );
-                        },
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    name.isNotEmpty ? name : 'Unknown',
+                                    style: const TextStyle(color: Colors.white),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.info_outline,
+                                    color: Color.fromARGB(255, 26, 164, 143),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => CustomerDetailsView(
+                                              customerName: name,
+                                              phoneNumber: phone,
+                                              date: DateTime.now(),
+                                              stateName: stateName,
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                            subtitle: Text(
+                              phone,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => CustomerDetailsView(
+                                        customerName: name,
+                                        phoneNumber: phone,
+                                        date: DateTime.now(),
+                                        stateName: stateName,
+                                      ),
+                                ),
+                              );
+                            },
+                          ),
+                          const Divider(
+                            color: Colors.white24,
+                            thickness: 0.7,
+                            indent: 16,
+                            endIndent: 16,
+                          ),
+                        ],
                       );
                     },
                   ),
