@@ -402,13 +402,8 @@ print("State Summary: $stateSummary");
             //   ),
             // ),
             const SizedBox(height: 20),
-
-            // Summary Cards
             _buildSectionTitle("Today's Summary - ${DateFormat('dd MMM yyyy').format(DateTime.now())}"),
-
-                        const SizedBox(height: 5),
-
-
+            const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -418,17 +413,13 @@ print("State Summary: $stateSummary");
                   "Invoices",
                   "$productiveCount",
                 ),
-                _buildInfoCard(Icons.currency_rupee, "Amount", "$totalAmount"),
+                 _buildInfoCard(Icons.currency_rupee, "Amount", "$totalAmount"),
               ],
             ),
-                        const SizedBox(height: 15),
-
-            _buildSectionTitle("Monthly Summary - ${DateFormat('MMMM yyyy').format(DateTime.now())}"),
-
-                        const SizedBox(height: 5),
-
-
-             Row(
+                  const SizedBox(height: 15),
+                  _buildSectionTitle("Monthly Summary - ${DateFormat('MMMM yyyy').format(DateTime.now())}"),
+                  const SizedBox(height: 5),
+              Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildInfoCard(Icons.people, "Active calls", "$activeCountmonthly"),
