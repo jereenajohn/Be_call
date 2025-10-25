@@ -489,8 +489,6 @@ Container(
           ),
         ],
       ),
-
-      // ✅ Data Rows (Top 3 by Productive Count)
       ...(() {
         final sorted =
             List<Map<String, dynamic>>.from(groupedData)..sort((a, b) => b['count'].compareTo(a['count']));

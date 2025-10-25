@@ -35,8 +35,7 @@ class _OtpPageState extends State<OtpPage> {
         Uri.parse('$api/api/otp/verify/'),
         body: {"otp": enteredOtp, "phone": widget.phoneNumber},
       );
-print(response.statusCode);
-print(response.body);
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
@@ -70,7 +69,6 @@ print(response.body);
         );
       }
     } catch (e) {
-      print(e);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Colors.red,

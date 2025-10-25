@@ -57,7 +57,6 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      print("🟢 States API Response: ${response.body}");
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -68,11 +67,9 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
           _stateLoading = false;
         });
       } else {
-        print("❌ Failed to fetch states: ${response.statusCode}");
         setState(() => _stateLoading = false);
       }
     } catch (e) {
-      print("⚠️ Error fetching states: $e");
       setState(() => _stateLoading = false);
     }
   }
@@ -101,7 +98,6 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
         _customers = [];
         _loading = false;
       });
-      print("Error fetching customers: $e");
     }
   }
 
@@ -176,7 +172,6 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
         );
       }
     } catch (e) {
-      print("Error saving contact: $e");
     }
   }
 
