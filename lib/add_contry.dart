@@ -43,8 +43,7 @@ Future<void> _fetchCountries() async {
       headers: {"Authorization": "Bearer $token"},
     );
 
-    print(response.statusCode);
-    print(response.body);
+
 
     if (response.statusCode == 200) {
       var decoded = jsonDecode(response.body);
@@ -56,11 +55,9 @@ Future<void> _fetchCountries() async {
       });
     } else {
       setState(() => _loading = false);
-      print("Failed to load countries: ${response.statusCode}");
     }
   } catch (e) {
     setState(() => _loading = false);
-    print("Error: $e");
   }
 }
 
@@ -81,8 +78,7 @@ Future<void> _fetchCountries() async {
 
       }
       );
-      print(response.statusCode);
-      print(response.body);
+ 
       if(response.statusCode==201 || response.statusCode==200){
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: const Text('Country saved successfully!'), backgroundColor: accent),
@@ -102,7 +98,6 @@ Future<void> _fetchCountries() async {
 
     }
     catch(e){
-      print(e);
     }
 
     

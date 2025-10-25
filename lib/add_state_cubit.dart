@@ -18,7 +18,6 @@ class AddStateCubit extends Cubit<AddStateState> {
 
     emit(AddStateLoading());
 var token = await gettokenFromPrefs();
-print(token);
     try {
       final url = Uri.parse("$api/api/states/"); // replace with your Django endpoint
       final response = await http.post(
@@ -30,8 +29,7 @@ print(token);
         body: jsonEncode({"name": name,
         "country":id}),
       );
-print(response.statusCode);
-print(response.body);
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         emit(AddStateSuccess("State saved successfully!"));
       } else {

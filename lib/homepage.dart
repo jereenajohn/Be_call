@@ -49,10 +49,8 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> _fetchCustomers() async {
-    print("Fetching customerss...");
     final token = await getToken();
     final id = await getid();
-    print("$api/api/contact/info/staff/$id/");
 
     setState(() => _loading = true);
 
@@ -61,9 +59,7 @@ class _HomepageState extends State<Homepage> {
         Uri.parse("$api/api/contact/info/staff/$id/"),
         headers: {"Authorization": "Bearer $token"},
       );
-      print(response.statusCode);
-      print("response.body: ${response.body}");
-
+     
       if (response.statusCode == 200) {
         final List<dynamic> items = List<dynamic>.from(
           jsonDecode(response.body),
@@ -76,11 +72,9 @@ class _HomepageState extends State<Homepage> {
         });
       } else {
         setState(() => _loading = false);
-        print("Failed to load customers: ${response.statusCode}");
       }
     } catch (e) {
       setState(() => _loading = false);
-      print("Error: $e");
     }
   }
 

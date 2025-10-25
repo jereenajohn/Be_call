@@ -37,9 +37,7 @@ class CountriesCubit extends Cubit<CountriesState> {
         },
       );
 
-      print(res.statusCode);
-      print(res.body);
-
+ 
       if (res.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = jsonDecode(res.body);
         final List<dynamic> data = jsonResponse['data'] ?? [];
