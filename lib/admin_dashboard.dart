@@ -96,8 +96,6 @@ getDateWise();
       headers: {"Authorization": "Bearer $token"},
     );
 
-    print("🟡 Status Code: ${res.statusCode}");
-    print("🟡 Response: ${res.body}");
 
     if (res.statusCode == 200) {
       List<dynamic> allData = jsonDecode(res.body);
@@ -112,12 +110,10 @@ getDateWise();
           String createdStr = DateFormat('yyyy-MM-dd').format(createdDate);
           return createdStr == todayStr;
         } catch (e) {
-          print("⚠️ Date parse error: $e");
           return false;
         }
       }).toList();
 
-      print("📅 Filtered today's calls: ${data.length}");
 
       Map<String, Map<String, dynamic>> grouped = {};
 
@@ -151,13 +147,10 @@ getDateWise();
         isLoading = false;
       });
 
-      print("✅ Final grouped today data count: ${groupedData.length}");
     } else {
-      print("❌ Failed: ${res.statusCode}");
       setState(() => isLoading = false);
     }
   } catch (e) {
-    print("⚠️ Error: $e");
     setState(() => isLoading = false);
   }
 }
@@ -169,7 +162,6 @@ getDateWise();
     var userId = await getUserId();
 
     if (userId == null) {
-      print("❌ No user id found in SharedPreferences");
       return;
     }
 
@@ -178,8 +170,7 @@ getDateWise();
       headers: {'Authorization': 'Bearer $token'},
     );
 
-    print('🟡 Status Code: ${response.statusCode}');
-    print('🟡 Response: ${response.body}');
+
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -194,7 +185,6 @@ getDateWise();
           String createdStr = "${createdDate.year}-${createdDate.month.toString().padLeft(2, '0')}-${createdDate.day.toString().padLeft(2, '0')}";
           return createdStr == todayStr;
         } catch (e) {
-          print("⚠️ Date parse error for call: $e");
           return false;
         }
       }).toList();
@@ -205,15 +195,11 @@ getDateWise();
         isLoading = false;
       });
 
-      print("✅ Loaded ${allCalls.length} total calls");
-      print("✅ Filtered ${filteredCalls.length} calls for today ($todayStr)");
     } else {
       setState(() => isLoading = false);
-      print('❌ Error fetching reports');
     }
   } catch (e) {
     setState(() => isLoading = false);
-    print('⚠️ Exception: $e');
   }
 }
 
@@ -242,10 +228,8 @@ getDateWise();
 
         });
       } else {
-        print("❌ Failed to load dashboard data: ${response.statusCode}");
       }
     } catch (e) {
-      print("⚠️ Error fetching dashboard data: $e");
     }
   }
 
@@ -253,7 +237,6 @@ getDateWise();
     var token = await getToken();
     var userId = await getUserId();
     if (userId == null) {
-      print("No user id found in SharedPreferences");
       return;
     }
 
@@ -268,10 +251,8 @@ getDateWise();
           _customers = [jsonDecode(response.body)];
         });
       } else {
-        print("Failed to load user: ${response.statusCode}");
       }
     } catch (e) {
-      print("Error: $e");
     }
   }
 
@@ -313,7 +294,6 @@ getDateWise();
         stateSummary[state]!['Amount'] += amount;
       }
     }
-print("State Summary: $stateSummary");
 
     return Scaffold(
       backgroundColor: bgColor,

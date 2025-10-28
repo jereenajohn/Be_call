@@ -56,11 +56,9 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
           _stateLoading = false;
         });
       } else {
-        print('❌ Failed to load states: ${response.statusCode}');
         setState(() => _stateLoading = false);
       }
     } catch (e) {
-      print('⚠️ Error fetching states: $e');
       setState(() => _stateLoading = false);
     }
   }
@@ -84,11 +82,9 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
           _loading = false;
         });
       } else {
-        print('❌ Failed to load contact details: ${response.statusCode}');
         setState(() => _loading = false);
       }
     } catch (e) {
-      print('⚠️ Error fetching contact: $e');
       setState(() => _loading = false);
     }
   }
@@ -139,7 +135,6 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
         );
       }
     } catch (e) {
-      print('⚠️ Error updating contact: $e');
     }
   }
 

@@ -111,11 +111,9 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
           isLoading = false;
         });
       } else {
-        print("Failed: ${res.statusCode}");
         setState(() => isLoading = false);
       }
     } catch (e) {
-      print("Error: $e");
       setState(() => isLoading = false);
     }
   }

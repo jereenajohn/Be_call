@@ -47,7 +47,6 @@ class _CallreportStatewiseState extends State<CallreportStatewise> {
       var userId = await getUserId();
 
       if (userId == null) {
-        print("❌ No user id found in SharedPreferences");
         return;
       }
 
@@ -56,8 +55,6 @@ class _CallreportStatewiseState extends State<CallreportStatewise> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      print('🟡 Status Code: ${response.statusCode}');
-      print('🟡 Response: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -71,14 +68,11 @@ class _CallreportStatewiseState extends State<CallreportStatewise> {
           );
           isLoading = false;
         });
-        print("✅ Loaded ${allCalls.length} call records");
       } else {
         setState(() => isLoading = false);
-        print('❌ Error fetching reports');
       }
     } catch (e) {
       setState(() => isLoading = false);
-      print('⚠️ Exception: $e');
     }
   }
 
