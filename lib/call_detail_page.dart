@@ -148,12 +148,10 @@ class _CallDetailPageState extends State<CallDetailPage> {
       }
 
       final checkUrl = Uri.parse('$api/api/contact/info/?search=$phone');
-       print("🔍 Checking existing contact: $checkUrl");
       final checkResponse = await https.get(
         checkUrl,
         headers: {"Authorization": "Bearer $token"},
       );
- print("📥 Response: ${checkResponse.statusCode} → ${checkResponse.body}");
       if (checkResponse.statusCode == 200) {
         final List<dynamic> existingContacts = json.decode(checkResponse.body);
         if (existingContacts.isNotEmpty) {
@@ -168,8 +166,7 @@ class _CallDetailPageState extends State<CallDetailPage> {
             "phone": phone,
             "state": int.tryParse(_selectedState ?? '0'),
           };
-  print("📝 Updating existing contact → $updateUrl");
-          print("📤 Body: $updateBody");
+
           final updateResponse = await https.put(
             updateUrl,
             headers: {
@@ -178,7 +175,6 @@ class _CallDetailPageState extends State<CallDetailPage> {
             },
             body: jsonEncode(updateBody),
           );
- print("📥 Update Response: ${updateResponse.statusCode} → ${updateResponse.body}");
           if (updateResponse.statusCode == 200) {
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("✅ Existing contact updated")));
@@ -194,8 +190,7 @@ class _CallDetailPageState extends State<CallDetailPage> {
         "phone": phone,
         "state": int.tryParse(_selectedState ?? '0'),
       };
- print("🆕 Creating new contact → $createUrl");
-      print("📤 Body: $createBody");
+
       final createResponse = await https.post(
         createUrl,
         headers: {
@@ -204,7 +199,6 @@ class _CallDetailPageState extends State<CallDetailPage> {
         },
         body: jsonEncode(createBody),
       );
-  print("📥 Create Response: ${createResponse.statusCode} → ${createResponse.body}");
       if (createResponse.statusCode == 201 || createResponse.statusCode == 200) {
         final data = json.decode(createResponse.body);
         _customerId = data['id'];
@@ -258,7 +252,6 @@ class _CallDetailPageState extends State<CallDetailPage> {
   }
 
   Future<void> updateCallDetails() async {
-     print("🟣 updateCallDetails() started");
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
     final callId = widget.call['id'];
@@ -290,8 +283,7 @@ class _CallDetailPageState extends State<CallDetailPage> {
     }
 
     final url = Uri.parse("$api/api/call/report/$callId/");
- print("🌐 PUT → $url");
-    print("📤 Body: $updatedData");
+
     try {
       final response = await https.put(
         url,
@@ -301,7 +293,6 @@ class _CallDetailPageState extends State<CallDetailPage> {
         },
         body: jsonEncode(updatedData),
       );
- print("📥 Response: ${response.statusCode} → ${response.body}");
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(invoiceController.text.trim().isNotEmpty

@@ -55,7 +55,6 @@ class _CallReportState extends State<CallReport> {
       var user = await getUserDetails();
 
       if (userId == null) {
-        print("No user id found in SharedPreferences");
         return;
       }
 
@@ -69,8 +68,7 @@ class _CallReportState extends State<CallReport> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      print('Active response: ${activeResponse.statusCode}');
-      print('Productive response: ${productiveResponse.statusCode}');
+   
 
       if (activeResponse.statusCode == 200 &&
           productiveResponse.statusCode == 200) {
@@ -119,21 +117,16 @@ class _CallReportState extends State<CallReport> {
           isLoading = false;
         });
 
-        print(
-          'Fetched ${filteredActive.length} active calls and ${filteredProductive.length} productive calls',
-        );
+    
       } else {
         setState(() {
           isLoading = false;
           userDetails = user;
         });
-        print(
-          'Error fetching call report: Active=${activeResponse.statusCode}, Productive=${productiveResponse.statusCode}',
-        );
+       
       }
     } catch (e) {
       setState(() => isLoading = false);
-      print('Exception: $e');
     }
   }
 

@@ -91,7 +91,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _fetchUser() async {
     var token = await getToken();
-    print("🔹 Token: $token");
     if (token == null) return;
 
     try {
@@ -100,9 +99,7 @@ class _SettingsPageState extends State<SettingsPage> {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      print("🔹 Status: ${response.statusCode}");
-      print("🔹 Body: ${response.body}");
-
+  
       if (response.statusCode == 200) {
         final jsonBody = jsonDecode(response.body);
         setState(() {
@@ -111,11 +108,9 @@ class _SettingsPageState extends State<SettingsPage> {
         });
       } else {
         setState(() => _loading = false);
-        print("Failed to load user: ${response.statusCode}");
       }
     } catch (e) {
       setState(() => _loading = false);
-      print("Error: $e");
     }
   }
 
@@ -132,11 +127,8 @@ class _SettingsPageState extends State<SettingsPage> {
         body: jsonEncode({"name": newName}),
       );
 
-      print("🟢 PUT → $api/api/users/$userId/");
-      print("Body: ${jsonEncode({"name": newName})}");
-      print("Response: ${response.statusCode} → ${response.body}");
+     
     } catch (e) {
-      print("Error updating name: $e");
     }
   }
 

@@ -19,7 +19,6 @@ class _statewiseState extends State<statewise> {
   @override
   void initState() {
     super.initState();
-    print("📍 State Name Received: ${widget.id}");
     _resolveStateIdAndFetch();
   }
 
@@ -50,24 +49,19 @@ class _statewiseState extends State<statewise> {
 
         if (matched.isNotEmpty) {
           final int stateId = matched['id'];
-          print("✅ Found stateId: $stateId for ${widget.id}");
           await _fetchCustomers(stateId);
         } else {
-          print("⚠️ No matching state found for ${widget.id}");
           setState(() => _loading = false);
         }
       } else {
-        print("❌ Failed to fetch states: ${response.statusCode}");
         setState(() => _loading = false);
       }
     } catch (e) {
-      print("Error resolving state: $e");
       setState(() => _loading = false);
     }
   }
 
   Future<void> _fetchCustomers(int stateId) async {
-    print("📞 Fetching customers for stateId: $stateId ...");
     final token = await getToken();
 
     try {
@@ -76,8 +70,6 @@ class _statewiseState extends State<statewise> {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      print("Response Code: ${response.statusCode}");
-      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -89,7 +81,6 @@ class _statewiseState extends State<statewise> {
         setState(() => _loading = false);
       }
     } catch (e) {
-      print("Error fetching customers: $e");
       setState(() => _loading = false);
     }
   }

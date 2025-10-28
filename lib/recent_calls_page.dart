@@ -57,10 +57,8 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
   List<dynamic> _customers = [];
   bool _loading = true;
   Future<void> _fetchCustomers() async {
-    print("Fetching customers...");
     final token = await getToken();
     final id = await getid();
-    print("$api/api/contact/info/staff/$id/");
 
     setState(() => _loading = true);
 
@@ -69,8 +67,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
         Uri.parse("$api/api/contact/info/staff/$id/"),
         headers: {"Authorization": "Bearer $token"},
       );
-      print(response.statusCode);
-      print("response.bodyyyyyyyy${response.body}");
+     
 
       if (response.statusCode == 200) {
         final List<dynamic> items = List<dynamic>.from(
@@ -101,11 +98,9 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
         });
       } else {
         setState(() => _loading = false);
-        print("Failed to load customers: ${response.statusCode}");
       }
     } catch (e) {
       setState(() => _loading = false);
-      print("Error: $e");
     }
   }
 
@@ -115,15 +110,11 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     required String phone,
     int? customerId, // NEW
   }) async {
-    print("🔔 Sending call report...$customerId");
-    print(
-      "Preparing to send call report for $customerName, duration: $duration",
-    );
+   
     final url = Uri.parse("$api/api/call/report/");
 
     final token = await getToken();
     if (token == null) {
-      print("❌ No token found, cannot send call report");
       return;
     }
 
@@ -136,7 +127,6 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     };
 
     try {
-      print("Sending call report: $body");
       final response = await http.post(
         url,
         headers: {
@@ -146,16 +136,11 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
         body: jsonEncode(body),
       );
 
-      print("Response status: ${response.statusCode}");
-      print("Response body: ${response.body}");
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        print("✅ Call report sent successfully: ${response.body}");
       } else {
-        print("⚠️ Failed: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
-      print("❌ Error sending call report: $e");
     }
   }
 
