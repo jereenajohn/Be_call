@@ -1,13 +1,19 @@
+import 'dart:convert';
+
+import 'package:be_call/api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:call_log/call_log.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as https;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomerDetailsView extends StatefulWidget {
   final String customerName;
   final String phoneNumber;
   final dynamic date;
   final String? stateName;
+  final int id;
 
   const CustomerDetailsView({
     super.key,
@@ -15,6 +21,7 @@ class CustomerDetailsView extends StatefulWidget {
     required this.phoneNumber,
     required this.date,
     required this.stateName,
+    required this.id,
   });
 
   @override
@@ -34,6 +41,61 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
     super.initState();
     _fetchCalls();
   }
+   Future<String?> getToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+ Future<String?> getid() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final id = prefs.getInt('id'); // fetch as int
+  return id?.toString();         // convert safely to String
+}
+
+Future<void> _updateContact() async {
+  print('Updating contact note...${_noteController.text}');
+  final id = await getid();
+  print('ID: $id');
+
+  try {
+    final token = await getToken();
+
+    final response = await https.put(
+      Uri.parse('$api/api/contact/info/${widget.id}/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'note': _noteController.text}),
+    );
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Contact updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update contact. Code: ${response.statusCode}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } catch (e) {
+    print('Error updating contact: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error updating contact: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
 Future<void> _fetchCalls() async {
   if (!await Permission.phone.request().isGranted) return;
@@ -100,6 +162,17 @@ Future<void> _fetchCalls() async {
     );
     if (picked != null) setState(() => _reminderDate = picked);
   }
+  final FocusNode _focusNode = FocusNode();
+
+final FocusNode _notesFocus = FocusNode();
+
+@override
+void dispose() {
+  _noteController.dispose();
+  _notesFocus.dispose();
+  super.dispose();
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -284,59 +357,89 @@ Future<void> _fetchCalls() async {
 
                   const SizedBox(height: 20),
 
-                  // ✅ Existing Notes section below remains same
-                  const Text(
-                    'Notes',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+            // ✅ Notes section — only show if contact id exists
+if (widget.id != 0 && widget.id != null) ...[
+  const Text(
+    'Notes',
+    style: TextStyle(
+      color: Colors.white,
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  const SizedBox(height: 8),
 
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _noteController,
-                            style: const TextStyle(color: Colors.white),
-                            maxLines: 5,
-                            enabled: saveNotes,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              hintText: 'Type notes here...',
-                              hintStyle: TextStyle(color: Colors.white54),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Transform.scale(
-                          scale: 1.2,
-                          child: Switch(
-                            value: saveNotes,
-                            activeColor: const Color.fromARGB(
-                              255,
-                              26,
-                              164,
-                              143,
-                            ),
-                            onChanged: (v) {
-                              setState(() => saveNotes = v);
-                              if (!v) _noteController.clear();
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+  Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.grey[900],
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _noteController,
+            focusNode: _notesFocus,
+            style: const TextStyle(color: Colors.white),
+            maxLines: 5,
+            onChanged: (text) {
+              if (saveNotes) {
+                _updateContact();
+              }
+            },
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              hintText:
+                  saveNotes ? 'Type notes here...' : 'Type notes (not saving)…',
+              hintStyle: const TextStyle(color: Colors.white54),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Transform.scale(
+          scale: 1.2,
+          child: Switch(
+            value: saveNotes,
+            activeColor: const Color.fromARGB(255, 26, 164, 143),
+            onChanged: (v) async {
+              setState(() => saveNotes = v);
+
+              if (v) {
+                await _updateContact();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Notes saving enabled and synced!'),
+                    backgroundColor: Colors.green,
                   ),
+                );
+              } else {
+                _noteController.clear();
+                _notesFocus.requestFocus();
+              }
+            },
+          ),
+        ),
+      ],
+    ),
+  ),
+] else ...[
+  // 👇 Show message if no contact id
+  Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.grey[900],
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: const Center(
+      child: Text(
+        'Notes unavailable (contact not saved)',
+        style: TextStyle(color: Colors.white70),
+      ),
+    ),
+  ),
+],
 
                   const SizedBox(height: 20),
 
