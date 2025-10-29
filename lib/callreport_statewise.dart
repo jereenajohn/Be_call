@@ -204,7 +204,7 @@ List<dynamic> _filterByDateRange(List<dynamic> data, DateTime start, DateTime en
           : stateSummary.isEmpty
               ? const Center(
                   child: Text(
-                    "No data found for selected range",
+                    "No datas found for selected range",
                     style: TextStyle(color: Colors.white70),
                   ),
                 )
