@@ -259,17 +259,17 @@ List<dynamic> _filterByDateRange(List<dynamic> data, DateTime start, DateTime en
                                         fontSize: 16),
                                   ),
                                 ),
-                                Padding(
-                                  padding: EdgeInsets.all(10.0),
-                                  child: Text(
-                                    "Active",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16),
-                                  ),
-                                ),
+                                // Padding(
+                                //   padding: EdgeInsets.all(10.0),
+                                //   child: Text(
+                                //     "Active",
+                                //     textAlign: TextAlign.center,
+                                //     style: TextStyle(
+                                //         color: Colors.white,
+                                //         fontWeight: FontWeight.bold,
+                                //         fontSize: 16),
+                                //   ),
+                                // ),
                                 Padding(
                                   padding: EdgeInsets.all(10.0),
                                   child: Text(
@@ -318,7 +318,7 @@ List<dynamic> _filterByDateRange(List<dynamic> data, DateTime start, DateTime en
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                              statewise(id: state),
+                                              Statewise(id: state),
                                         ),
                                       );
                                     },
@@ -331,16 +331,16 @@ List<dynamic> _filterByDateRange(List<dynamic> data, DateTime start, DateTime en
                                       ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(10.0),
-                                    child: Text(
-                                      stats['Active'].toString(),
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          color: Colors.orange,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                                  // Padding(
+                                  //   padding: const EdgeInsets.all(10.0),
+                                  //   child: Text(
+                                  //     stats['Active'].toString(),
+                                  //     textAlign: TextAlign.center,
+                                  //     style: const TextStyle(
+                                  //         color: Colors.orange,
+                                  //         fontWeight: FontWeight.bold),
+                                  //   ),
+                                  // ),
                                   Padding(
                                     padding: const EdgeInsets.all(10.0),
                                     child: Text(
@@ -379,21 +379,21 @@ List<dynamic> _filterByDateRange(List<dynamic> data, DateTime start, DateTime en
                                         fontWeight: FontWeight.bold),
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Text(
-                                    stateSummary.values
-                                        .fold<int>(
-                                            0,
-                                            (sum, v) =>
-                                                sum + ((v['Active'] ?? 0) as int))
-                                        .toString(),
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        color: Colors.orange,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ),
+                                // Padding(
+                                //   padding: const EdgeInsets.all(10.0),
+                                //   child: Text(
+                                //     stateSummary.values
+                                //         .fold<int>(
+                                //             0,
+                                //             (sum, v) =>
+                                //                 sum + ((v['Active'] ?? 0) as int))
+                                //         .toString(),
+                                //     textAlign: TextAlign.center,
+                                //     style: const TextStyle(
+                                //         color: Colors.orange,
+                                //         fontWeight: FontWeight.bold),
+                                //   ),
+                                // ),
                                 Padding(
                                   padding: const EdgeInsets.all(10.0),
                                   child: Text(

@@ -213,6 +213,7 @@ class _HomepageState extends State<Homepage> {
                                       MaterialPageRoute(
                                         builder:
                                             (context) => CustomerDetailsView(
+                                              id:customer['id'],
                                               customerName: name,
                                               phoneNumber: phone,
                                               date: DateTime.now(),
@@ -234,7 +235,8 @@ class _HomepageState extends State<Homepage> {
                                 MaterialPageRoute(
                                   builder:
                                       (context) => CustomerDetailsView(
-                                        customerName: name,
+                                        id:customer['id'],
+                                    customerName: name,
                                         phoneNumber: phone,
                                         date: DateTime.now(),
                                         stateName: stateName,

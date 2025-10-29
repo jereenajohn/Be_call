@@ -386,6 +386,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                                   MaterialPageRoute(
                                     builder:
                                         (_) => CustomerDetailsView(
+                                          id: 0,
                                           customerName: c.name ?? c.number,
                                           phoneNumber: c.number,
                                           date: c.lastTime,
