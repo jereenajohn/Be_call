@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:be_call/api.dart';
+import 'package:be_call/call_report_person_wise.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,7 +52,7 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
       return "${remainingSeconds}s";
     }
   }
-
+var id;
   Future<void> getDateWise(DateTime from, DateTime to) async {
     setState(() {
       isLoading = true;
@@ -67,6 +68,7 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
         Uri.parse("$api/api/call/report/date-range/?from=$fromStr&to=$toStr"),
         headers: {"Authorization": "Bearer $token"},
       );
+     
 
       // ✅ Fallback to single date
       if (res.statusCode != 200) {
@@ -75,12 +77,16 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
           headers: {"Authorization": "Bearer $token"},
         );
       }
-
+ print("Response Status Code: ${res.statusCode}");
+      print("Response Body: ${res.body}");
       if (res.statusCode == 200) {
         List<dynamic> data = jsonDecode(res.body);
         Map<String, Map<String, dynamic>> grouped = {};
 
         for (var call in data) {
+
+          id=call['created_by'];
+
           String name = call['created_by_name'] ?? 'Unknown';
           String status = call['status'] ?? '';
           String durationStr = call['duration'] ?? '0 sec';
@@ -307,10 +313,20 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
       return TableRow(
         decoration: const BoxDecoration(color: Colors.black),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Text(row['name'],
-                style: const TextStyle(color: Colors.white)),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CallreportpersonWise(id: id),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Text(row['name'],
+                  style: const TextStyle(color: Colors.white)),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(10),
