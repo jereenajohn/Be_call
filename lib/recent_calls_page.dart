@@ -105,44 +105,49 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
   }
 
   Future<void> sendCallReport({
-    required String customerName,
-    required String duration,
-    required String phone,
-    int? customerId, // NEW
-  }) async {
-   
-    final url = Uri.parse("$api/api/call/report/");
+  required String customerName,
+  required String duration,
+  required String phone,
+  required DateTime callDateTime, // 👈 Added
+  int? customerId,
+}) async {
+  final url = Uri.parse("$api/api/call/report/");
+  final token = await getToken();
+  if (token == null) return;
 
-    final token = await getToken();
-    if (token == null) {
-      return;
+  // Format the date-time for backend (e.g. ISO8601)
+  final formattedDateTime = callDateTime.toIso8601String();
+
+  final body = <String, dynamic>{
+    "customer_name": customerName,
+    "duration": duration,
+    "status": "Active",
+    "phone": phone,
+    "call_datetime": formattedDateTime, // 👈 New field
+    if (customerId != null) "Customer": customerId,
+  };
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(body),
+    );
+print(response.body);
+print(response.statusCode);
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("✅ Call report sent successfully");
+    } else {
+      print("❌ Failed to send call report: ${response.statusCode}");
     }
-
-    final body = <String, dynamic>{
-      "customer_name": customerName,
-      "duration": duration,
-      "status": "Active",
-      "phone": phone,
-      if (customerId != null) "Customer": customerId,
-    };
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(body),
-      );
-
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-      } else {
-      }
-    } catch (e) {
-    }
+  } catch (e) {
+    print("⚠️ Error sending call report: $e");
   }
+}
+
 
   void _onSearch() {
     final q = _searchCtrl.text.toLowerCase();
@@ -182,44 +187,41 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                 lastCall.callType == CallType.incoming) &&
             (lastCall.duration != null && lastCall.duration! > 0)) {
           // Completed call
-          await sendCallReport(
-            customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
-            duration: "${lastCall.duration} sec",
-            phone: lastCall.number ?? '', // 👈 Added
-            customerId:
-                _phoneToCustomerId[_normalize(lastCall.number ?? '')], // NEW
-          );
+        await sendCallReport(
+  customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
+  duration: "${lastCall.duration} sec",
+  phone: lastCall.number ?? '',
+  customerId: _phoneToCustomerId[_normalize(lastCall.number ?? '')],
+  callDateTime: DateTime.fromMillisecondsSinceEpoch(lastCall.timestamp ?? 0), // 👈 Added
+);
+
 
           await prefs.setString('last_reported_call', callKey);
         } else if (lastCall.callType == CallType.missed) {
           // Missed call
-          await sendCallReport(
-            customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
-            duration: "0 sec",
-            phone: lastCall.number ?? '', // 👈 Added
-            customerId:
-                _phoneToCustomerId[_normalize(lastCall.number ?? '')], // NEW
-          );
+         await sendCallReport(
+  customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
+  duration: "${lastCall.duration} sec",
+  phone: lastCall.number ?? '',
+  customerId: _phoneToCustomerId[_normalize(lastCall.number ?? '')],
+  callDateTime: DateTime.fromMillisecondsSinceEpoch(lastCall.timestamp ?? 0), // 👈 Added
+);
 
           await prefs.setString('last_reported_call', callKey);
         }
       }
 
       // ✅ Build list for UI
-      final list =
-          entries
-              .map(
-                (e) => _GroupedCall(
-                  number: e.number ?? '',
-                  name: e.name ?? e.number ?? 'Unknown',
-                  date: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
-                  lastTime: DateTime.fromMillisecondsSinceEpoch(
-                    e.timestamp ?? 0,
-                  ),
-                  callType: e.callType ?? CallType.incoming,
-                ),
-              )
-              .toList();
+    final list = entries.map(
+  (e) => _GroupedCall(
+    number: e.number ?? '',
+    name: e.name ?? e.number ?? 'Unknown',
+    date: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
+    lastTime: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
+    callType: e.callType ?? CallType.incoming,
+    duration: e.duration ?? 0, // 👈 store duration
+  ),
+).toList();
 
       setState(() {
         _allCalls = list;
@@ -360,26 +362,53 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                               'Phone',
                               style: TextStyle(color: Colors.white54),
                             ),
-                            trailing: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  _dateLabel(c.date),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  _timeLabel(c.lastTime),
-                                  style: const TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
+                           trailing: Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          _dateLabel(c.date),
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+        ),
+        Text(
+          _timeLabel(c.lastTime),
+          style: const TextStyle(color: Colors.white54, fontSize: 13),
+        ),
+      ],
+    ),
+    const SizedBox(width: 10),
+    IconButton(
+      icon: const Icon(Icons.add_circle_outline,
+          color: Colors.tealAccent, size: 24),
+      tooltip: "Add Call Report",
+      onPressed: () async {
+        final normPhone = _normalize(c.number);
+        final customerId = _phoneToCustomerId[normPhone];
+        final customerName = c.name ?? c.number;
+
+        await sendCallReport(
+          customerName: customerName,
+         duration: "${c.duration} sec",
+
+          phone: c.number,
+          callDateTime: c.lastTime,
+          customerId: customerId,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("✅ Call report added successfully"),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      },
+    ),
+  ],
+),
+
                             onTap:
                                 () => Navigator.push(
                                   context,
@@ -411,6 +440,7 @@ class _GroupedCall {
   final DateTime date;
   DateTime lastTime;
   CallType callType;
+  int duration; // 👈 add this
 
   _GroupedCall({
     required this.number,
@@ -418,6 +448,7 @@ class _GroupedCall {
     required this.date,
     required this.lastTime,
     required this.callType,
+    required this.duration, // 👈 add this
   });
 }
 

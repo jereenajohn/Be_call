@@ -57,6 +57,9 @@ dev_dependencies:
   # flutter_webrtc: ^0.12.5  
   # web_socket_channel: ^2.4.0
   flutter_contacts: ^1.1.7
+  file_picker: ^8.0.0
+  audioplayers: ^6.1.0
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
