@@ -232,8 +232,8 @@ getDateWise();
     } catch (e) {
     }
   }
-
-  Future<void> _fetchUser() async {
+  Future<void> _fetchUser() async 
+  {
     var token = await getToken();
     var userId = await getUserId();
     if (userId == null) {
@@ -253,8 +253,10 @@ getDateWise();
       } else {
       }
     } catch (e) {
+      
+
     }
-  }
+   }
 
   @override
   Widget build(BuildContext context) {

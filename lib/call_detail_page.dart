@@ -293,9 +293,7 @@
       try {
         var streamedResponse = await request.send();
         final response = await https.Response.fromStream(streamedResponse);
-        print("response body: ${response.body}");
-        print("status code: ${response.statusCode}");
-
+      
         if (response.statusCode == 200) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("✅ Call updated successfully")),

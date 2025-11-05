@@ -77,8 +77,7 @@ var id;
           headers: {"Authorization": "Bearer $token"},
         );
       }
- print("Response Status Code: ${res.statusCode}");
-      print("Response Body: ${res.body}");
+
       if (res.statusCode == 200) {
         List<dynamic> data = jsonDecode(res.body);
         Map<String, Map<String, dynamic>> grouped = {};

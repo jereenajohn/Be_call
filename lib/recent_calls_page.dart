@@ -136,15 +136,11 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       },
       body: jsonEncode(body),
     );
-print(response.body);
-print(response.statusCode);
+
     if (response.statusCode == 201 || response.statusCode == 200) {
-      print("✅ Call report sent successfully");
     } else {
-      print("❌ Failed to send call report: ${response.statusCode}");
     }
   } catch (e) {
-    print("⚠️ Error sending call report: $e");
   }
 }
 
