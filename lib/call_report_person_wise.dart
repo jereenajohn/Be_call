@@ -79,8 +79,7 @@ class _CallreportpersonWiseState extends State<CallreportpersonWise> {
         headers: {"Authorization": "Bearer $token"},
       );
 
-      print("Response Status Code: ${res.statusCode}");
-      print("Response Body: ${res.body}");
+     
 
       if (res.statusCode == 200) {
         List<dynamic> data = jsonDecode(res.body);
@@ -114,11 +113,9 @@ class _CallreportpersonWiseState extends State<CallreportpersonWise> {
         });
       } else {
         setState(() => isLoading = false);
-        print("Error Response: ${res.body}");
       }
     } catch (e) {
       setState(() => isLoading = false);
-      print("Error fetching data: $e");
     }
   }
 
@@ -211,6 +208,7 @@ class _CallreportpersonWiseState extends State<CallreportpersonWise> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                    
                       Text(_formatTime(_position),
                           style: const TextStyle(
                               color: Colors.white, fontSize: 12)),

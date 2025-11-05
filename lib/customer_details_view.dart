@@ -52,9 +52,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
 }
 
 Future<void> _updateContact() async {
-  print('Updating contact note...${_noteController.text}');
   final id = await getid();
-  print('ID: $id');
 
   try {
     final token = await getToken();
@@ -68,8 +66,7 @@ Future<void> _updateContact() async {
       body: jsonEncode({'note': _noteController.text}),
     );
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
+  
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -87,7 +84,6 @@ Future<void> _updateContact() async {
       );
     }
   } catch (e) {
-    print('Error updating contact: $e');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Error updating contact: $e'),
