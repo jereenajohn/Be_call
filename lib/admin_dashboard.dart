@@ -300,74 +300,110 @@ getDateWise();
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 26, 164, 143),
-        elevation: 4,
-        shadowColor: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.4),
-        automaticallyImplyLeading: false, // hides default back arrow
-        titleSpacing: 16, // add padding from left edge
-        title: const Text(
-          'BE CALL',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.3,
-            fontSize: 18,
-          ),
-        ),
-        centerTitle: false, // ✅ aligns title to the left
-       actions: [
-  Padding(
-    padding: const EdgeInsets.only(right: 16),
-    child: GestureDetector(
-      onTap: () async {
-        // Confirm logout (optional)
-        final shouldLogout = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Logout'),
-            content: const Text('Are you sure you want to log out?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Logout'),
-              ),
-            ],
-          ),
-        );
-
-        if (shouldLogout ?? false) {
-          // Clear stored token and role
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('token');
-          await prefs.remove('role');
-
-          // Navigate back to LoginPage
-          if (context.mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-              (route) => false,
-            );
-          }
-        }
-      },
-      child: const CircleAvatar(
-        radius: 18,
-        backgroundColor: Colors.white,
-        child: Icon(
-          Icons.person,
-          color: Color.fromARGB(255, 26, 164, 143),
-        ),
-      ),
+  backgroundColor: const Color.fromARGB(255, 26, 164, 143),
+  elevation: 4,
+  shadowColor: const Color.fromARGB(255, 26, 164, 143).withOpacity(0.4),
+  automaticallyImplyLeading: false,
+  titleSpacing: 16,
+  title: const Text(
+    'BE CALL',
+    style: TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.3,
+      fontSize: 18,
     ),
   ),
-],
+  centerTitle: false,
+  actions: [
+    Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: PopupMenuButton<String>(
+        icon: const Icon(
+          Icons.more_vert,
+          color: Colors.white,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        onSelected: (String value) async {
+          if (value == 'logout') {
+            // ✅ Logout logic (no confirmation)
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove('token');
+            await prefs.remove('role');
 
+            if (context.mounted) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
+            }
+          } else if (value == 'Survay Questions') {
+            
+            Navigator.pushNamed(context, '/add_questions');
+
+          
+          } 
+          else if (value == 'Survay Report') {
+            
+            Navigator.pushNamed(context, '/survay_report');
+
+          
+          }
+          else if (value == 'profile') {
+            // Example: open profile page
+            print('Profile tapped');
+          }
+        },
+        itemBuilder: (BuildContext context) => [
+          const PopupMenuItem<String>(
+            value: 'profile',
+            child: Row(
+              children: [
+                Icon(Icons.person, color: Colors.teal),
+                SizedBox(width: 8),
+                Text('Profile'),
+              ],
+            ),
+          ),
+          const PopupMenuItem<String>(
+            value: 'Survay Questions',
+            child: Row(
+              children: [
+                Icon(Icons.settings, color: Colors.teal),
+                SizedBox(width: 8),
+                Text('Survay Questions'),
+              ],
+            ),
+          ),
+           const PopupMenuItem<String>(
+            value: 'Survay Report',
+            child: Row(
+              children: [
+                Icon(Icons.settings, color: Colors.teal),
+                SizedBox(width: 8),
+                Text('Survay Report'),
+              ],
+            ),
+          ),
+          const PopupMenuItem<String>(
+            value: 'logout',
+            child: Row(
+              children: [
+                Icon(Icons.logout, color: Colors.redAccent),
+                SizedBox(width: 8),
+                Text('Logout'),
+              ],
+            ),
+          ),
+        ],
       ),
+    ),
+  ],
+),
+
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),

@@ -646,7 +646,8 @@ Widget _expandableTable({
         ),
 ),
 
-                                  DataCell(Row(
+                                  DataCell(
+                                    Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       SizedBox(
@@ -670,7 +671,8 @@ Widget _expandableTable({
                                         },
                                       ),
                                     ],
-                                  )),
+                                  )
+                                  ),
                                 ],
                         );
                       }).toList()

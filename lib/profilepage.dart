@@ -12,6 +12,7 @@ import 'package:be_call/callreport_statewise.dart';
 import 'package:be_call/countries_cubit.dart';
 import 'package:be_call/dialerpage.dart';
 import 'package:be_call/homepage.dart';
+import 'package:be_call/survay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -264,6 +265,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
 
+                
+
                 const SizedBox(height: 40),
 
                 // Settings List
@@ -274,6 +277,21 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Column(
                     children: [
+
+                      _settingsTile(
+                        icon: Icons.person_2,
+                        label: 'Survey',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const Survay(),
+                            ),
+                          );
+                        },
+                      ),
+                     const Divider(color: Colors.black54, height: 1),
+
                       _settingsTile(
                         icon: Icons.person_2,
                         label: 'datewise Call Report',
