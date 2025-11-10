@@ -37,7 +37,7 @@ Future login(String email, String password, BuildContext context) async {
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
       var status = responseData['status'];
-
+print(responseData);
       if (status == 'success') {
         var token = responseData['token'];
         var active = responseData['active'];
@@ -60,6 +60,7 @@ Future login(String email, String password, BuildContext context) async {
           await prefs.setInt('warehouse_id', warehouse);
           await prefs.setInt('id', userId);
           await prefs.setString('role', userRole);
+
 
           // ✅ Navigate based on role
           if (userRole == 'ADMIN') {
