@@ -73,7 +73,7 @@ class _MyAppState extends State<MyApp> {
             '/dialer': (context) => const Homepage(),
             '/admin': (context) => const AdminDashboard(),
             '/add_questions': (context) => const AddQuestions(),
-            '/survay_report': (context) => const SurvayReport(),
+            '/survay_report': (context) => const SurveyReportPage(),
           },
         );
       },
