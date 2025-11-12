@@ -68,7 +68,8 @@ var id;
         Uri.parse("$api/api/call/report/date-range/?from=$fromStr&to=$toStr"),
         headers: {"Authorization": "Bearer $token"},
       );
-     
+     print(res.statusCode);
+     print(res.body);
 
       // ✅ Fallback to single date
       if (res.statusCode != 200) {
@@ -77,7 +78,9 @@ var id;
           headers: {"Authorization": "Bearer $token"},
         );
       }
-
+print(res.statusCode);
+print(
+       " res.body");
       if (res.statusCode == 200) {
         List<dynamic> data = jsonDecode(res.body);
         Map<String, Map<String, dynamic>> grouped = {};
@@ -91,7 +94,7 @@ var id;
           String durationStr = call['duration'] ?? '0 sec';
           double amount = (call['amount'] ?? 0).toDouble();
 
-          if (status.toLowerCase() == 'productive') {
+          if (status.toLowerCase() == 'productive' || status.toLowerCase() == 'Active') {
             grouped.putIfAbsent(name, () => {
                   'count': 0,
                   'duration': 0,
