@@ -243,7 +243,6 @@ Map<String, Map<String, int>> getHourlyStats(List<Map<String, dynamic>> data) {
         setState(() => isLoading = false);
       }
     } catch (e) {
-      print("Error in getDateWise: $e");
       setState(() => isLoading = false);
     }
   }
