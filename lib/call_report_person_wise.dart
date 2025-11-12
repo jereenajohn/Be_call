@@ -142,47 +142,59 @@ class _CallreportpersonWiseState extends State<CallreportpersonWise> {
     return {'morning': morningTotal, 'afternoon': afternoonTotal};
   }
 
-Map<String, Map<String, int>> getHourlyStats(List<Map<String, dynamic>> data) {
-  Map<String, Map<String, int>> hourly = {
-    '9-10 AM': {'duration': 0, 'count': 0},
-    '10-11 AM': {'duration': 0, 'count': 0},
-    '11-12 PM': {'duration': 0, 'count': 0},
-    '12-1 PM': {'duration': 0, 'count': 0},
-    '1-2 PM': {'duration': 0, 'count': 0},
-    '2-3 PM': {'duration': 0, 'count': 0},
-    '3-4 PM': {'duration': 0, 'count': 0},
-    '4-5 PM': {'duration': 0, 'count': 0},
-    '5-6 PM': {'duration': 0, 'count': 0},
-  };
+  Map<String, Map<String, int>> getHourlyStats(
+    List<Map<String, dynamic>> data,
+  ) {
+    Map<String, Map<String, int>> hourly = {
+      '9-10 AM': {'duration': 0, 'count': 0},
+      '10-11 AM': {'duration': 0, 'count': 0},
+      '11-12 PM': {'duration': 0, 'count': 0},
+      '12-1 PM': {'duration': 0, 'count': 0},
+      '1-2 PM': {'duration': 0, 'count': 0},
+      '2-3 PM': {'duration': 0, 'count': 0},
+      '3-4 PM': {'duration': 0, 'count': 0},
+      '4-5 PM': {'duration': 0, 'count': 0},
+      '5-6 PM': {'duration': 0, 'count': 0},
+    };
 
-  for (var call in data) {
-    if (call['time'] != null && call['time'].toString().isNotEmpty) {
-      try {
-        DateTime t = DateTime.parse(call['time']).toLocal();
-        int hour = t.hour;
-        int duration = safeInt(call['duration']);
+    for (var call in data) {
+      if (call['time'] != null && call['time'].toString().isNotEmpty) {
+        try {
+          DateTime t = DateTime.parse(call['time']).toLocal();
+          int hour = t.hour;
+          int duration = safeInt(call['duration']);
 
-        String? key;
-        if (hour >= 9 && hour < 10) key = '9-10 AM';
-        else if (hour >= 10 && hour < 11) key = '10-11 AM';
-        else if (hour >= 11 && hour < 12) key = '11-12 PM';
-        else if (hour >= 12 && hour < 13) key = '12-1 PM';
-        else if (hour >= 13 && hour < 14) key = '1-2 PM';
-        else if (hour >= 14 && hour < 15) key = '2-3 PM';
-        else if (hour >= 15 && hour < 16) key = '3-4 PM';
-        else if (hour >= 16 && hour < 17) key = '4-5 PM';
-        else if (hour >= 17 && hour < 18) key = '5-6 PM';
+          String? key;
+          if (hour >= 9 && hour < 10)
+            key = '9-10 AM';
+          else if (hour >= 10 && hour < 11)
+            key = '10-11 AM';
+          else if (hour >= 11 && hour < 12)
+            key = '11-12 PM';
+          else if (hour >= 12 && hour < 13)
+            key = '12-1 PM';
+          else if (hour >= 13 && hour < 14)
+            key = '1-2 PM';
+          else if (hour >= 14 && hour < 15)
+            key = '2-3 PM';
+          else if (hour >= 15 && hour < 16)
+            key = '3-4 PM';
+          else if (hour >= 16 && hour < 17)
+            key = '4-5 PM';
+          else if (hour >= 17 && hour < 18)
+            key = '5-6 PM';
 
-        if (key != null) {
-          hourly[key]!['duration'] = (hourly[key]!['duration'] ?? 0) + duration;
-          hourly[key]!['count'] = (hourly[key]!['count'] ?? 0) + 1;
-        }
-      } catch (_) {}
+          if (key != null) {
+            hourly[key]!['duration'] =
+                (hourly[key]!['duration'] ?? 0) + duration;
+            hourly[key]!['count'] = (hourly[key]!['count'] ?? 0) + 1;
+          }
+        } catch (_) {}
+      }
     }
-  }
 
-  return hourly;
-}
+    return hourly;
+  }
 
   Future<void> getDateWise(DateTime from, DateTime to) async {
     setState(() => isLoading = true);
@@ -246,8 +258,6 @@ Map<String, Map<String, int>> getHourlyStats(List<Map<String, dynamic>> data) {
       setState(() => isLoading = false);
     }
   }
-
-  
 
   Map<String, int> getHourlyBreakup(List<Map<String, dynamic>> data) {
     Map<String, int> hourly = {
@@ -434,622 +444,717 @@ Map<String, Map<String, int>> getHourlyStats(List<Map<String, dynamic>> data) {
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    color: Colors.grey[900],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      rangeText.isEmpty ? "Today" : rangeText,
-                      style: const TextStyle(
-                        color: Colors.tealAccent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+      body:
+          isLoading
+              ? const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
+              : SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      color: Colors.grey[900],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                  // 🔝 Top Summary: Total CD & Total Invoice Amount
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 4),
-                    child: Row(
-                      children: [
-                        // Total CD
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[900],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.white24,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Total Call Duration",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  formatDuration(getTotalDurationAll()),
-                                  style: const TextStyle(
-                                    color: Colors.tealAccent,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                      child: Text(
+                        rangeText.isEmpty ? "Today" : rangeText,
+                        style: const TextStyle(
+                          color: Colors.tealAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 10),
-                        // Total Invoice Amount
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[900],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.white24,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  "Total Invoice Amount",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "₹${getTotalAmountAll().toStringAsFixed(2)}",
-                                  style: const TextStyle(
-                                    color: Colors.tealAccent,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
 
-Padding(
-  padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
-  child: Card(
-    color: Colors.grey[900],
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Builder(builder: (_) {
-        final totals = getSessionTotals();
-        final hourlyStats = getHourlyStats(groupedData);
-
-        final morningKeys = [
-          "9-10 AM",
-          "10-11 AM",
-          "11-12 PM",
-          "12-1 PM",
-          "1-2 PM",
-        ];
-        final afternoonKeys = [
-          "2-3 PM",
-          "3-4 PM",
-          "4-5 PM",
-          "5-6 PM",
-        ];
-
-        TableRow buildHeaderRow() {
-          return TableRow(
-            decoration: BoxDecoration(color: Colors.teal.withOpacity(0.3)),
-            children: const [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text("Time",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13)),
-              ),
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text("Duration",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13)),
-              ),
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text("Calls",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13)),
-              ),
-            ],
-          );
-        }
-
-        TableRow buildDataRow(String key) {
-          final stat = hourlyStats[key] ?? {'duration': 0, 'count': 0};
-          return TableRow(
-            decoration:
-                BoxDecoration(border: Border(bottom: BorderSide(color: Colors.white24))),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(key,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  formatDuration(stat['duration'] ?? 0),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: Colors.tealAccent,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  "${stat['count']} calls",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13),
-                ),
-              ),
-            ],
-          );
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Staff Session Summary",
-              style: TextStyle(
-                color: Colors.tealAccent,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // 🌅 Morning Session
-            const Text(
-              "Morning Session (9 AM - 2 PM)",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13),
-            ),
-            const SizedBox(height: 6),
-            Table(
-              border: TableBorder.all(color: Colors.white24, width: 0.5),
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(2),
-                2: FlexColumnWidth(2),
-              },
-              children: [
-                buildHeaderRow(),
-                ...morningKeys.map(buildDataRow),
-              ],
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  "Total Call Duration: ${formatDuration(totals['morning'] ?? 0)}",
-                  style: const TextStyle(
-                      color: Colors.tealAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🌇 Afternoon Session
-            const Text(
-              "Afternoon Session (2 PM - 6 PM)",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13),
-            ),
-            const SizedBox(height: 6),
-            Table(
-              border: TableBorder.all(color: Colors.white24, width: 0.5),
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(2),
-                2: FlexColumnWidth(2),
-              },
-              children: [
-                buildHeaderRow(),
-                ...afternoonKeys.map(buildDataRow),
-              ],
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(
-                  "Total Call Duration: ${formatDuration(totals['afternoon'] ?? 0)}",
-                  style: const TextStyle(
-                      color: Colors.tealAccent,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13),
-                ),
-              ),
-            ),
-          ],
-        );
-      }),
-    ),
-  ),
-),
-
-                  // ✅ Customer-wise breakdown (now non-scrolling inner list so the whole page scrolls)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      children: customerGrouped.entries.map((entry) {
-                        final customer = entry.key;
-                        final calls = entry.value;
-                        final hourly = getHourlyBreakup(calls);
-                        final totalDuration = getTotalDurationForCustomer(calls);
-                        final totalAmount = calls.fold<num>(
-                          0,
-                          (sum, c) =>
-                              sum + ((c['amount'] is num) ? c['amount'] as num : 0),
-                        );
-
-                        return Card(
-                          color: Colors.grey[900],
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          child: ExpansionTile(
-                            collapsedIconColor: Colors.tealAccent,
-                            iconColor: Colors.tealAccent,
-                            title: Row(
-                              children: [
-                                Expanded(
-                                  flex: 4,
-                                  child: Text(
-                                    customer,
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
+                    // 🔝 Top Summary: Total CD & Total Invoice Amount
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 4),
+                      child: Row(
+                        children: [
+                          // Total CD
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[900],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.white24,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Total Call Duration",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    formatDuration(getTotalDurationAll()),
                                     style: const TextStyle(
                                       color: Colors.tealAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  flex: 3,
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerRight,
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          formatDuration(totalDuration),
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          "₹${totalAmount.toStringAsFixed(2)}",
-                                          style: const TextStyle(
-                                            color: Colors.tealAccent,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
+                          ),
+                          const SizedBox(width: 10),
+                          // Total Invoice Amount
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[900],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.white24,
+                                  width: 1,
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Total Invoice Amount",
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "₹${getTotalAmountAll().toStringAsFixed(2)}",
+                                    style: const TextStyle(
+                                      color: Colors.tealAccent,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+                      child: Card(
+                        color: Colors.grey[900],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Builder(
+                            builder: (_) {
+                              final totals = getSessionTotals();
+                              final hourlyStats = getHourlyStats(groupedData);
+
+                              final morningKeys = [
+                                "9-10 AM",
+                                "10-11 AM",
+                                "11-12 PM",
+                                "12-1 PM",
+                                "1-2 PM",
+                              ];
+                              final afternoonKeys = [
+                                "2-3 PM",
+                                "3-4 PM",
+                                "4-5 PM",
+                                "5-6 PM",
+                              ];
+
+                              TableRow buildHeaderRow() {
+                                return TableRow(
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal.withOpacity(0.3),
+                                  ),
+                                  children: const [
+                                    Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Text(
+                                        "Time",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Text(
+                                        "Duration",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Text(
+                                        "Calls",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              TableRow buildDataRow(String key) {
+                                final stat =
+                                    hourlyStats[key] ??
+                                    {'duration': 0, 'count': 0};
+                                return TableRow(
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(color: Colors.white24),
+                                    ),
+                                  ),
                                   children: [
-                                    // ☀️ Morning session (9 AM – 2 PM)
-                                    const Text(
-                                      "Morning Session (9 AM - 2 PM)",
-                                      style: TextStyle(
-                                        color: Colors.tealAccent,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        key,
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    ...hourly.entries
-                                        .where((e) => [
-                                              "9-10 AM",
-                                              "10-11 AM",
-                                              "11-12 PM",
-                                              "12-1 PM",
-                                              "1-2 PM",
-                                            ].contains(e.key))
-                                        .map((entry) => Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                Text(
-                                                  entry.key,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  formatDuration(entry.value),
-                                                  style: const TextStyle(
-                                                    color: Colors.tealAccent,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ))
-                                        .toList(),
-                                    const Divider(
-                                      color: Colors.white24,
-                                      height: 12,
-                                    ),
-
-                                    // ✅ Morning total
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          "Morning Total CD:",
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
-                                          ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        formatDuration(stat['duration'] ?? 0),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.tealAccent,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
                                         ),
-                                        Text(
-                                          formatDuration(hourly.entries
-                                              .where((e) => [
-                                                "9-10 AM",
-                                                "10-11 AM",
-                                                "11-12 PM",
-                                                "12-1 PM",
-                                                "1-2 PM",
-                                              ].contains(e.key))
-                                              .fold<int>(0, (sum, e) => sum + e.value)),
-                                          style: const TextStyle(
-                                            color: Colors.tealAccent,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    const SizedBox(height: 12),
-
-                                    // 🌇 Afternoon session (2 PM – 6 PM)
-                                    const Text(
-                                      "Afternoon Session (2 PM - 6 PM)",
-                                      style: TextStyle(
-                                        color: Colors.tealAccent,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    ...hourly.entries
-                                        .where((e) => [
-                                              "2-3 PM",
-                                              "3-4 PM",
-                                              "4-5 PM",
-                                              "5-6 PM",
-                                            ].contains(e.key))
-                                        .map((entry) => Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                Text(
-                                                  entry.key,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  formatDuration(entry.value),
-                                                  style: const TextStyle(
-                                                    color: Colors.tealAccent,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ],
-                                            ))
-                                        .toList(),
-                                    const Divider(
-                                      color: Colors.white24,
-                                      height: 12,
-                                    ),
-
-                                    // ✅ Afternoon total
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          "Afternoon Total CD:",
-                                          style: TextStyle(
-                                            color: Colors.white70,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
-                                          ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        "${stat['count']} calls",
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 13,
                                         ),
-                                        Text(
-                                          formatDuration(hourly.entries
-                                              .where((e) => [
-                                                "2-3 PM",
-                                                "3-4 PM",
-                                                "4-5 PM",
-                                                "5-6 PM",
-                                              ].contains(e.key))
-                                              .fold<int>(0, (sum, e) => sum + e.value)),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Staff Session Summary",
+                                    style: TextStyle(
+                                      color: Colors.tealAccent,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // 🌅 Morning Session
+                                  const Text(
+                                    "Morning Session (9 AM - 2 PM)",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Table(
+                                    border: TableBorder.all(
+                                      color: Colors.white24,
+                                      width: 0.5,
+                                    ),
+                                    columnWidths: const {
+                                      0: FlexColumnWidth(2),
+                                      1: FlexColumnWidth(2),
+                                      2: FlexColumnWidth(2),
+                                    },
+                                    children: [
+                                      buildHeaderRow(),
+                                      ...morningKeys.map(buildDataRow),
+                                    ],
+                                  ),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Text(
+                                        "Total Call Duration: ${formatDuration(totals['morning'] ?? 0)}",
+                                        style: const TextStyle(
+                                          color: Colors.tealAccent,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 20),
+
+                                  // 🌇 Afternoon Session
+                                  const Text(
+                                    "Afternoon Session (2 PM - 6 PM)",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Table(
+                                    border: TableBorder.all(
+                                      color: Colors.white24,
+                                      width: 0.5,
+                                    ),
+                                    columnWidths: const {
+                                      0: FlexColumnWidth(2),
+                                      1: FlexColumnWidth(2),
+                                      2: FlexColumnWidth(2),
+                                    },
+                                    children: [
+                                      buildHeaderRow(),
+                                      ...afternoonKeys.map(buildDataRow),
+                                    ],
+                                  ),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Text(
+                                        "Total Call Duration: ${formatDuration(totals['afternoon'] ?? 0)}",
+                                        style: const TextStyle(
+                                          color: Colors.tealAccent,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ✅ Customer-wise breakdown (now non-scrolling inner list so the whole page scrolls)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        children:
+                            customerGrouped.entries.map((entry) {
+                              final customer = entry.key;
+                              final calls = entry.value;
+                              final hourly = getHourlyBreakup(calls);
+                              final totalDuration = getTotalDurationForCustomer(
+                                calls,
+                              );
+                              final totalAmount = calls.fold<num>(
+                                0,
+                                (sum, c) =>
+                                    sum +
+                                    ((c['amount'] is num)
+                                        ? c['amount'] as num
+                                        : 0),
+                              );
+
+                              return Card(
+                                color: Colors.grey[900],
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                child: ExpansionTile(
+                                  collapsedIconColor: Colors.tealAccent,
+                                  iconColor: Colors.tealAccent,
+                                  title: Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 4,
+                                        child: Text(
+                                          customer,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
                                           style: const TextStyle(
                                             color: Colors.tealAccent,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
                                           ),
                                         ),
-                                      ],
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        flex: 3,
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment: Alignment.centerRight,
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                formatDuration(totalDuration),
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                "₹${totalAmount.toStringAsFixed(2)}",
+                                                style: const TextStyle(
+                                                  color: Colors.tealAccent,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // ☀️ Morning session (9 AM – 2 PM)
+                                          const Text(
+                                            "Morning Session (9 AM - 2 PM)",
+                                            style: TextStyle(
+                                              color: Colors.tealAccent,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          ...hourly.entries
+                                              .where(
+                                                (e) => [
+                                                  "9-10 AM",
+                                                  "10-11 AM",
+                                                  "11-12 PM",
+                                                  "12-1 PM",
+                                                  "1-2 PM",
+                                                ].contains(e.key),
+                                              )
+                                              .map(
+                                                (entry) => Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      entry.key,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      formatDuration(
+                                                        entry.value,
+                                                      ),
+                                                      style: const TextStyle(
+                                                        color:
+                                                            Colors.tealAccent,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                              .toList(),
+                                          const Divider(
+                                            color: Colors.white24,
+                                            height: 12,
+                                          ),
+
+                                          // ✅ Morning total
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                "Morning Total CD:",
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              Text(
+                                                formatDuration(
+                                                  hourly.entries
+                                                      .where(
+                                                        (e) => [
+                                                          "9-10 AM",
+                                                          "10-11 AM",
+                                                          "11-12 PM",
+                                                          "12-1 PM",
+                                                          "1-2 PM",
+                                                        ].contains(e.key),
+                                                      )
+                                                      .fold<int>(
+                                                        0,
+                                                        (sum, e) =>
+                                                            sum + e.value,
+                                                      ),
+                                                ),
+                                                style: const TextStyle(
+                                                  color: Colors.tealAccent,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+
+                                          const SizedBox(height: 12),
+
+                                          // 🌇 Afternoon session (2 PM – 6 PM)
+                                          const Text(
+                                            "Afternoon Session (2 PM - 6 PM)",
+                                            style: TextStyle(
+                                              color: Colors.tealAccent,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          ...hourly.entries
+                                              .where(
+                                                (e) => [
+                                                  "2-3 PM",
+                                                  "3-4 PM",
+                                                  "4-5 PM",
+                                                  "5-6 PM",
+                                                ].contains(e.key),
+                                              )
+                                              .map(
+                                                (entry) => Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      entry.key,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      formatDuration(
+                                                        entry.value,
+                                                      ),
+                                                      style: const TextStyle(
+                                                        color:
+                                                            Colors.tealAccent,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                              .toList(),
+                                          const Divider(
+                                            color: Colors.white24,
+                                            height: 12,
+                                          ),
+
+                                          // ✅ Afternoon total
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              const Text(
+                                                "Afternoon Total CD:",
+                                                style: TextStyle(
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              Text(
+                                                formatDuration(
+                                                  hourly.entries
+                                                      .where(
+                                                        (e) => [
+                                                          "2-3 PM",
+                                                          "3-4 PM",
+                                                          "4-5 PM",
+                                                          "5-6 PM",
+                                                        ].contains(e.key),
+                                                      )
+                                                      .fold<int>(
+                                                        0,
+                                                        (sum, e) =>
+                                                            sum + e.value,
+                                                      ),
+                                                ),
+                                                style: const TextStyle(
+                                                  color: Colors.tealAccent,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    const Divider(color: Colors.white24),
+                                    Column(
+                                      children:
+                                          calls.map((row) {
+                                            String formattedTime = '';
+                                            if (row['time'] != null &&
+                                                row['time']
+                                                    .toString()
+                                                    .isNotEmpty) {
+                                              try {
+                                                final parsed =
+                                                    DateTime.parse(
+                                                      row['time'],
+                                                    ).toLocal();
+                                                formattedTime = DateFormat(
+                                                  'hh:mm a',
+                                                ).format(parsed);
+                                              } catch (_) {}
+                                            }
+
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 4,
+                                                  ),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    formattedTime,
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    formatDuration(
+                                                      safeInt(row['duration']),
+                                                    ),
+                                                    style: const TextStyle(
+                                                      color: Colors.white70,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    row['amount'] == 0
+                                                        ? "Active"
+                                                        : "₹${(row['amount'] ?? 0).toStringAsFixed(2)}",
+                                                    style: TextStyle(
+                                                      color:
+                                                          row['amount'] == 0
+                                                              ? Colors.redAccent
+                                                              : Colors
+                                                                  .tealAccent,
+                                                    ),
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.play_circle_fill,
+                                                      color: Colors.tealAccent,
+                                                    ),
+                                                    onPressed: () {
+                                                      if (row['audio_file'] !=
+                                                              null &&
+                                                          row['audio_file']
+                                                              .toString()
+                                                              .isNotEmpty) {
+                                                        _showAudioPopup(
+                                                          row['audio_file'],
+                                                        );
+                                                      } else {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              "No audio file found",
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }).toList(),
                                     ),
                                   ],
                                 ),
-                              ),
-
-                              const Divider(color: Colors.white24),
-                              Column(
-                                children: calls.map((row) {
-                                  String formattedTime = '';
-                                  if (row['time'] != null &&
-                                      row['time'].toString().isNotEmpty) {
-                                    try {
-                                      final parsed =
-                                          DateTime.parse(row['time']).toLocal();
-                                      formattedTime = DateFormat('hh:mm a')
-                                          .format(parsed);
-                                    } catch (_) {}
-                                  }
-
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 4,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          formattedTime,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        Text(
-                                          formatDuration(safeInt(row['duration'])),
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                          ),
-                                        ),
-                                        Text(
-                                          row['amount'] == 0
-                                              ? "Active"
-                                              : "₹${(row['amount'] ?? 0).toStringAsFixed(2)}",
-                                          style: TextStyle(
-                                            color: row['amount'] == 0
-                                                ? Colors.redAccent
-                                                : Colors.tealAccent,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.play_circle_fill,
-                                            color: Colors.tealAccent,
-                                          ),
-                                          onPressed: () {
-                                            if (row['audio_file'] != null &&
-                                                row['audio_file']
-                                                    .toString()
-                                                    .isNotEmpty) {
-                                              _showAudioPopup(row['audio_file']);
-                                            } else {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    "No audio file found",
-                                                  ),
-                                                ),
-                                              );
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                              );
+                            }).toList(),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
     );
   }
 }
