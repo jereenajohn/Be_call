@@ -352,6 +352,12 @@ getDateWise();
 
           
           }
+          else if (value == 'product Report') {
+            
+            Navigator.pushNamed(context, '/product_report_view');
+
+          
+          }
           else if (value == 'profile') {
             // Example: open profile page
             print('Profile tapped');
@@ -388,6 +394,17 @@ getDateWise();
               ],
             ),
           ),
+           const PopupMenuItem<String>(
+            value: 'product Report',
+            child: Row(
+              children: [
+                Icon(Icons.settings, color: Colors.teal),
+                SizedBox(width: 8),
+                Text('product Report'),
+              ],
+            ),
+          ),
+         
           const PopupMenuItem<String>(
             value: 'logout',
             child: Row(

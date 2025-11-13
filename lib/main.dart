@@ -2,6 +2,7 @@ import 'package:be_call/add_questions.dart';
 import 'package:be_call/homepage.dart';
 import 'package:be_call/login_page.dart';
 import 'package:be_call/admin_dashboard.dart'; // 👈 Import your admin dashboard page
+import 'package:be_call/product_report_view.dart';
 import 'package:be_call/survay_report.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -74,6 +75,7 @@ class _MyAppState extends State<MyApp> {
             '/admin': (context) => const AdminDashboard(),
             '/add_questions': (context) => const AddQuestions(),
             '/survay_report': (context) => const SurveyReportPage(),
+            '/product_report_view': (context) => const ProductReportView(),
           },
         );
       },

@@ -26,12 +26,14 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
   String? _selectedState;
   bool _loading = true;
   bool _stateLoading = true;
+  String ?_selectedDistrict;
 
   @override
   void initState() {
     super.initState();
     _fetchStates();
     _fetchContactDetails();
+    getDistrict();
   }
 
   Future<String?> getToken() async {
@@ -62,6 +64,38 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
       setState(() => _stateLoading = false);
     }
   }
+  List<Map<String, dynamic>> district = [];
+ Future<void> getDistrict() async {
+    try {
+      final token = await getToken();
+      final response = await https.get(
+        Uri.parse('$api/api/districts/add/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+print(response.body);
+      if (response.statusCode == 200) {
+        final parsed = jsonDecode(response.body);
+        final dataList = parsed['data'] as List;
+
+        setState(() {
+          district = dataList
+              .map((q) => {
+                    'id': q['id'],
+                    'state_name': q['state_name'],
+                    'name': q['name'],
+                  
+                  })
+              .toList();
+        });
+      }
+    } catch (error) {
+      debugPrint('Error fetching questions: $error');
+    }
+  }
+ 
 
   Future<void> _fetchContactDetails() async {
     try {
@@ -230,11 +264,25 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
                                 (v) => v == null ? "Select a state" : null,
                           ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _emailCtrl,
-                        decoration: _inputDecoration('Email (optional)'),
+                  DropdownButtonFormField<String>(
+                        value: _selectedDistrict,
+                        decoration: _inputDecoration("Select district"),
+                        dropdownColor: Colors.grey[900],
                         style: const TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.emailAddress,
+                        items:
+                            district.map<DropdownMenuItem<String>>((s) {
+                              return DropdownMenuItem<String>(
+                                value: s['id'].toString(),
+                                child: Text(
+                                  s['name'],
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          setState(() => _selectedDistrict = value);
+                        },
+                        validator: (v) => v == null ? "Select a district" : null,
                       ),
                       const SizedBox(height: 28),
                       SizedBox(
