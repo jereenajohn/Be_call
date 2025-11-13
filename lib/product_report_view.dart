@@ -47,42 +47,43 @@ Future<String?> getTokenFromPrefs() async {
     return prefs.getString('token');
   }
 
-  Future<void> getcustomer(var id) async {
-    try {
-      final token = await getTokenFromPrefs();
-      var response = await https.get(
-        Uri.parse('$api/api/staff/customers/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
+Future<void> getcustomer(var id) async {
+  try {
+    final token = await getTokenFromPrefs();
+    var response = await https.get(
+      Uri.parse('$api/api/customers/manager/$id/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
 
-      print('Response status customer: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    print('Response status customer: ${response.statusCode}');
+    print('Response body: ${response.body}');
 
-      if (response.statusCode == 200) {
-        final parsed = jsonDecode(response.body);
-        var productsData = parsed['data'];
-        List<Map<String, dynamic>> managerlist = [];
+    if (response.statusCode == 200) {
+      final List<dynamic> parsed = jsonDecode(response.body);
 
-        for (var productData in productsData) {
-          managerlist.add({
-            'id': productData['id'],
-            'name': productData['name'],
-            'created_at': productData['created_at'],
-          });
-        }
+      List<Map<String, dynamic>> managerlist = [];
 
-        setState(() {
-          customer = managerlist;
-          print('Customers: $customer');
+      for (var productData in parsed) {
+        managerlist.add({
+          'id': productData['id'],
+          'name': productData['name'],
+          'created_at': productData['created_at'],
         });
       }
-    } catch (error) {
-      print('Error fetching customers: $error');
+
+      setState(() {
+        customer = managerlist;
+        print('Customers: $customer');
+      });
     }
+  } catch (error) {
+    print('Error fetching customers: $error');
   }
+}
+
 
  Future<void> getProductCategories() async {
     try {
@@ -458,6 +459,270 @@ if (entryDate == null) {
       text: "State Product Report - ${staff['name']}");
 }
 
+Future<void> generateCustomerProductExcel() async {
+  if (selectedStaff == null) return;
+
+  var staff = staffList.firstWhere((s) => s['id'].toString() == selectedStaff);
+
+  // 🔥 Get customer list for this staff
+  List<Map<String, dynamic>> customerList = customer;
+
+  // 🔥 Extract category names
+  List<String> categories =
+      categoryList.map((e) => e['name'].toString()).toList();
+
+  var excel = Excel.createExcel();
+  Sheet sheetObject = excel['Customer_Product_Report'];
+
+  // ==========================================================
+  //                         STYLES
+  // ==========================================================
+
+  CellStyle titleStyle = CellStyle(
+    bold: true,
+    fontColorHex: "#000000",
+    backgroundColorHex: "#FF0000", // RED
+    horizontalAlign: HorizontalAlign.Center,
+    verticalAlign: VerticalAlign.Center,
+    fontSize: 14,
+  );
+
+  CellStyle headerStyle = CellStyle(
+    bold: true,
+    fontColorHex: "#000000",
+    backgroundColorHex: "#ADD8E6", // Light Blue
+    horizontalAlign: HorizontalAlign.Center,
+  );
+
+  CellStyle redBodyStyle = CellStyle(
+    bold: false,
+    fontColorHex: "#000000",
+    backgroundColorHex: "#FF0000", // RED
+    horizontalAlign: HorizontalAlign.Center,
+  );
+
+  CellStyle yellowStyle = CellStyle(
+    bold: true,
+    fontColorHex: "#000000",
+    backgroundColorHex: "#FFFF00", // Yellow
+    horizontalAlign: HorizontalAlign.Center,
+  );
+
+  CellStyle greenTotalStyle = CellStyle(
+    bold: true,
+    fontColorHex: "#000000",
+    backgroundColorHex: "#00FF00", // Green
+    horizontalAlign: HorizontalAlign.Center,
+  );
+
+  int totalColumns = categories.length + 2; // CUSTOMER + TOTAL + categories
+
+  // ==========================================================
+  //                  ROW 0 → TITLE ROW
+  // ==========================================================
+
+  sheetObject.merge(
+    CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
+    CellIndex.indexByColumnRow(columnIndex: totalColumns - 1, rowIndex: 0),
+  );
+
+  var titleCell =
+      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0));
+
+  titleCell.value =
+      "Customer Product Report - ${staff['name']} "
+      "${startDate != null && endDate != null ? 
+        "(${startDate!.toString().substring(0, 10)} to ${endDate!.toString().substring(0, 10)})" 
+        : ""}";
+  titleCell.cellStyle = titleStyle;
+
+  // ==========================================================
+  //               ROW 1 → EMPTY ROW
+  // ==========================================================
+  for (int col = 0; col < totalColumns; col++) {
+    sheetObject
+        .cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 1))
+        .value = "";
+  }
+
+  // ==========================================================
+  //                  ROW 2 → HEADER ROW
+  // ==========================================================
+
+  int headerRow = 2;
+
+  var h1 = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: headerRow));
+  h1.value = "CUSTOMER";
+  h1.cellStyle = headerStyle;
+
+  var h2 = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: headerRow));
+  h2.value = "TOTAL";
+  h2.cellStyle = headerStyle;
+
+  for (int c = 0; c < categories.length; c++) {
+    var cell = sheetObject.cell(
+      CellIndex.indexByColumnRow(columnIndex: c + 2, rowIndex: headerRow),
+    );
+    cell.value = categories[c];
+    cell.cellStyle = headerStyle;
+  }
+
+  // ==========================================================
+  //          BUILD CUSTOMER-WISE CATEGORY TOTALS
+  // ==========================================================
+
+  Map<String, Map<int, num>> customerTotals = {}; 
+  Map<int, num> grandCategoryTotals = {};
+
+  for (var cust in customerList) {
+    String customerName = cust["name"];
+    int customerId = cust["id"];
+
+    customerTotals.putIfAbsent(customerName, () => {});
+
+    for (var entry in report) {
+      bool staffMatch = entry["staff"].toString() == selectedStaff;
+      bool customerMatch = entry["customer"] == customerId;
+
+      // 🔥 Date filter with null protection
+      String? dateStr = entry["date"];
+      if (dateStr == null || dateStr.isEmpty) continue;
+      DateTime? entryDate = DateTime.tryParse(dateStr);
+      if (entryDate == null) continue;
+
+      bool dateMatch = (startDate == null || endDate == null)
+          ? true
+          : entryDate.isAfter(startDate!.subtract(const Duration(days: 1))) &&
+              entryDate.isBefore(endDate!.add(const Duration(days: 1)));
+
+      if (staffMatch && customerMatch && dateMatch) {
+        for (var item in entry["items"]) {
+          int categoryId = item["category"];
+          num qty = item["quantity"];
+
+          customerTotals[customerName]!.update(categoryId, (v) => v + qty,
+              ifAbsent: () => qty);
+
+          grandCategoryTotals.update(categoryId, (v) => v + qty,
+              ifAbsent: () => qty);
+        }
+      }
+    }
+  }
+
+  // ==========================================================
+  //                    WRITE CUSTOMER ROWS
+  // ==========================================================
+
+  int rowIndex = headerRow + 1;
+
+  customerTotals.forEach((customerName, catData) {
+    num totalQty = 0;
+
+    sheetObject
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
+        .value = customerName;
+
+    for (int c = 0; c < categories.length; c++) {
+      int categoryId = categoryList[c]['id'];
+      num qty = catData[categoryId] ?? 0;
+
+      totalQty += qty;
+
+      var cell = sheetObject.cell(
+        CellIndex.indexByColumnRow(columnIndex: c + 2, rowIndex: rowIndex),
+      );
+
+      if (qty > 0) {
+        cell.value = qty;
+        cell.cellStyle = yellowStyle;
+      } else {
+        cell.value = 0;
+        cell.cellStyle = redBodyStyle;
+      }
+    }
+
+    var totalCell = sheetObject.cell(
+      CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
+    );
+
+    if (totalQty > 0) {
+      totalCell.value = totalQty;
+      totalCell.cellStyle = greenTotalStyle;
+    } else {
+      totalCell.value = 0;
+      totalCell.cellStyle = redBodyStyle;
+    }
+
+    rowIndex++;
+  });
+
+  // ==========================================================
+  //      EMPTY ROW BEFORE GRAND TOTAL
+  // ==========================================================
+
+  for (int col = 0; col < totalColumns; col++) {
+    sheetObject
+        .cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rowIndex))
+        .value = "";
+  }
+
+  rowIndex++;
+
+  // ==========================================================
+  //                 GRAND TOTAL ROW
+  // ==========================================================
+
+  var gtCell = sheetObject.cell(
+    CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
+  );
+  gtCell.value = "GRAND TOTAL";
+  gtCell.cellStyle = yellowStyle;
+
+  num finalGrandTotal = 0;
+
+  for (int c = 0; c < categories.length; c++) {
+    int categoryId = categoryList[c]['id'];
+    num qty = grandCategoryTotals[categoryId] ?? 0;
+
+    finalGrandTotal += qty;
+
+    var cell = sheetObject.cell(
+      CellIndex.indexByColumnRow(columnIndex: c + 2, rowIndex: rowIndex),
+    );
+    cell.value = qty;
+    cell.cellStyle = yellowStyle;
+  }
+
+  var totalGrandCell = sheetObject.cell(
+    CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
+  );
+
+  if (finalGrandTotal > 0) {
+    totalGrandCell.value = finalGrandTotal;
+    totalGrandCell.cellStyle = greenTotalStyle;
+  } else {
+    totalGrandCell.value = 0;
+    totalGrandCell.cellStyle = redBodyStyle;
+  }
+
+  // ==========================================================
+  //                  SAVE & SHARE FILE
+  // ==========================================================
+
+  final dir = await getTemporaryDirectory();
+  final filePath =
+      "${dir.path}/Customer_Product_Report_${staff['name']}.xlsx";
+
+  File(filePath)
+    ..createSync(recursive: true)
+    ..writeAsBytesSync(excel.encode()!);
+
+  await Share.shareXFiles([XFile(filePath)],
+      text: "Customer Product Report - ${staff['name']}");
+}
+
+
  @override
 Widget build(BuildContext context) {
   return Scaffold(
@@ -617,49 +882,50 @@ Container(
 
  if (selectedStaff != null)
  
-  Column(
-    children: [
-      // ====== STATE PRODUCT REPORT BUTTON ======
-      Padding(
-        padding: const EdgeInsets.only(top: 30),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-            backgroundColor: const Color(0xFF1AA48F),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-         onPressed: (startDate != null && endDate != null)
-    ? () => generateStateProductExcel()
-    : null,
+ Column(
+  children: [
+    const SizedBox(height: 30),
 
-          child: const Text(
-            "State Product Report",
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-
-      const SizedBox(height: 20),
-
-      // ====== NEW CUSTOMER PRODUCT REPORT BUTTON ======
-      ElevatedButton(
+    // ===== FIRST BUTTON =====
+    SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-          backgroundColor: Colors.blueAccent,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: const Color(0xFF1AA48F),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        onPressed: () {
-          // generateCustomerProductExcel();  // NEW FUNCTION
-        },
+        onPressed: (startDate != null && endDate != null)
+            ? () => generateStateProductExcel()
+            : null,
+        child: const Text(
+          "State Product Report",
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    ),
+
+    const SizedBox(height: 20),
+
+    // ===== SECOND BUTTON (Same Size + Same Color) =====
+    SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: const Color(0xFF1AA48F), // SAME COLOR
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: generateCustomerProductExcel,
         child: const Text(
           "Customer Product Report",
           style: TextStyle(
@@ -668,8 +934,9 @@ Container(
           ),
         ),
       ),
-    ],
-  ),
+    ),
+  ],
+)
 
 
         ],
