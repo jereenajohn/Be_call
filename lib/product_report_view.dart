@@ -27,6 +27,9 @@ class _ProductReportViewState extends State<ProductReportView> {
 List<dynamic> filteredStaffList = [];
 String? selectedStaff;
   List<Map<String, dynamic>> customer = [];
+  DateTime? startDate;
+DateTime? endDate;
+
 
 TextEditingController staffSearchCtrl = TextEditingController();
 
@@ -197,7 +200,7 @@ Future<void> generateStateProductExcel() async {
       categoryList.map((e) => e['name'].toString()).toList();
 
   var excel = Excel.createExcel();
-  Sheet sheetObject = excel['State Product Report'];
+Sheet sheetObject = excel['State_Product_Report'];
 
   // ========================================
   //                STYLES
@@ -257,7 +260,11 @@ Future<void> generateStateProductExcel() async {
 
   var titleCell =
       sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0));
-  titleCell.value = "State Product Report - ${staff['name']}";
+titleCell.value =
+    "State Product Report - ${staff['name']} "
+    "${startDate != null && endDate != null ? 
+      "(${startDate!.toString().substring(0, 10)} to ${endDate!.toString().substring(0, 10)})" 
+      : ""}";
   titleCell.cellStyle = titleStyle;
 
   // ========================================
@@ -303,18 +310,34 @@ Future<void> generateStateProductExcel() async {
   Map<String, Map<int, num>> stateCategoryTotals = {};
   Map<int, num> categoryTotals = {};
 
-  for (var entry in report) {
-    if (entry["staff"].toString() == selectedStaff) {
-      String state = entry["customer_state"] ?? "Unknown";
+    for (var entry in report) {
+      bool staffMatch = entry["staff"].toString() == selectedStaff;
 
-      stateCategoryTotals.putIfAbsent(state, () => {});
+String? dateStr = entry["date"];
+if (dateStr == null || dateStr.isEmpty) {
+  continue; // ⛔ skip entries without date
+}
 
-      for (var item in entry["items"]) {
-        int categoryId = item["category"];
-        num qty = item["quantity"];
+DateTime? entryDate = DateTime.tryParse(dateStr);
+if (entryDate == null) {
+  continue; // ⛔ skip invalid date formats
+}
+      bool dateMatch =
+          entryDate.isAfter(startDate!.subtract(const Duration(days: 1))) &&
+              entryDate.isBefore(endDate!.add(const Duration(days: 1)));
 
-        stateCategoryTotals[state]!.update(categoryId, (v) => v + qty,
-            ifAbsent: () => qty);
+   if (staffMatch && dateMatch) {
+  String state = entry["customer_state"] ?? "Unknown";
+
+  // 🔥 FIX ADDED
+  stateCategoryTotals.putIfAbsent(state, () => {});
+
+  for (var item in entry["items"]) {
+    int categoryId = item["category"];
+    num qty = item["quantity"];
+
+    stateCategoryTotals[state]!.update(categoryId, (v) => v + qty,
+        ifAbsent: () => qty);
 
         categoryTotals.update(categoryId, (v) => v + qty, ifAbsent: () => qty);
       }
@@ -530,18 +553,70 @@ Container(
         ),
       );
     }).toList(),
-    onChanged: (value) async{
-      setState(() {
-        selectedStaff = value;
-      });
-            await getcustomer(value);
+   onChanged: (value) async {
+  setState(() {
+    selectedStaff = value;
 
-    },
+    // ⭐ Reset date range to avoid null crash
+    startDate = null;
+    endDate = null;
+  });
+  await getcustomer(value);
+},
+
   ),
 ),
 
+      const SizedBox(height: 20),
+      const Text(
+        "Select Date Range",
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1AA48F),
+        ),
+      ),
+      const SizedBox(height: 8),
+
+      GestureDetector(
+        onTap: () async {
+          final picked = await showDateRangePicker(
+            context: context,
+            firstDate: DateTime(2020),
+            lastDate: DateTime.now(),
+            initialDateRange: startDate != null && endDate != null
+                ? DateTimeRange(start: startDate!, end: endDate!)
+                : null,
+          );
+
+          if (picked != null) {
+            setState(() {
+              startDate = picked.start;
+              endDate = picked.end;
+            });
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey[900]!.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Color(0xFF1AA48F), width: 1.3),
+          ),
+          child: Text(
+            startDate == null
+                ? "Select Date Range"
+                : "${startDate!.toString().substring(0, 10)}  to  ${endDate!.toString().substring(0, 10)}",
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+      const SizedBox(height: 20),
+
+
 
  if (selectedStaff != null)
+ 
   Column(
     children: [
       // ====== STATE PRODUCT REPORT BUTTON ======
@@ -556,9 +631,10 @@ Container(
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: () {
-            generateStateProductExcel();
-          },
+         onPressed: (startDate != null && endDate != null)
+    ? () => generateStateProductExcel()
+    : null,
+
           child: const Text(
             "State Product Report",
             style: TextStyle(
