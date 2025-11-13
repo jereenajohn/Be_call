@@ -26,6 +26,7 @@ class _ProductReportViewState extends State<ProductReportView> {
     List<dynamic> staffList = [];
 List<dynamic> filteredStaffList = [];
 String? selectedStaff;
+  List<Map<String, dynamic>> customer = [];
 
 TextEditingController staffSearchCtrl = TextEditingController();
 
@@ -42,6 +43,44 @@ Future<String?> getTokenFromPrefs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+
+  Future<void> getcustomer(var id) async {
+    try {
+      final token = await getTokenFromPrefs();
+      var response = await https.get(
+        Uri.parse('$api/api/staff/customers/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('Response status customer: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final parsed = jsonDecode(response.body);
+        var productsData = parsed['data'];
+        List<Map<String, dynamic>> managerlist = [];
+
+        for (var productData in productsData) {
+          managerlist.add({
+            'id': productData['id'],
+            'name': productData['name'],
+            'created_at': productData['created_at'],
+          });
+        }
+
+        setState(() {
+          customer = managerlist;
+          print('Customers: $customer');
+        });
+      }
+    } catch (error) {
+      print('Error fetching customers: $error');
+    }
+  }
+
  Future<void> getProductCategories() async {
     try {
       final token = await getTokenFromPrefs();
@@ -164,29 +203,33 @@ Future<void> generateStateProductExcel() async {
   //                STYLES
   // ========================================
 
+  // 🔴 Title row (Red background + BLACK text)
   CellStyle titleStyle = CellStyle(
     bold: true,
-    fontColorHex: "#FFFFFF",
+    fontColorHex: "#000000",
     backgroundColorHex: "#FF0000",
     horizontalAlign: HorizontalAlign.Center,
     verticalAlign: VerticalAlign.Center,
     fontSize: 14,
   );
 
+  // 🔵 Header (Light Blue background + BLACK text)
   CellStyle headerStyle = CellStyle(
     bold: true,
-    fontColorHex: "#FFFFFF",
-    backgroundColorHex: "#0000FF",
+    fontColorHex: "#000000",
+    backgroundColorHex: "#ADD8E6", // Light blue
     horizontalAlign: HorizontalAlign.Center,
   );
 
+  // 🔴 Red body for zeros (BLACK text)
   CellStyle redBodyStyle = CellStyle(
     bold: false,
-    fontColorHex: "#FFFFFF",
+    fontColorHex: "#000000",
     backgroundColorHex: "#FF0000",
     horizontalAlign: HorizontalAlign.Center,
   );
 
+  // 🟡 Yellow style (BLACK text)
   CellStyle yellowStyle = CellStyle(
     bold: true,
     fontColorHex: "#000000",
@@ -194,6 +237,7 @@ Future<void> generateStateProductExcel() async {
     horizontalAlign: HorizontalAlign.Center,
   );
 
+  // 🟩 Green totals (BLACK text)
   CellStyle greenTotalStyle = CellStyle(
     bold: true,
     fontColorHex: "#000000",
@@ -201,10 +245,10 @@ Future<void> generateStateProductExcel() async {
     horizontalAlign: HorizontalAlign.Center,
   );
 
-  int totalColumns = categories.length + 2; // STATE + TOTAL + categories
+  int totalColumns = categories.length + 2;
 
   // ========================================
-  //          ROW 0 → RED TITLE ROW
+  //          ROW 0 → TITLE ROW
   // ========================================
   sheetObject.merge(
     CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
@@ -217,7 +261,7 @@ Future<void> generateStateProductExcel() async {
   titleCell.cellStyle = titleStyle;
 
   // ========================================
-  //          ROW 1 → EMPTY ROW (NEW)
+  //          ROW 1 → EMPTY ROW
   // ========================================
   int emptyTitleRow = 1;
   for (int col = 0; col < totalColumns; col++) {
@@ -254,7 +298,7 @@ Future<void> generateStateProductExcel() async {
   }
 
   // ========================================
-  //      BUILD STATE-WISE & CATEGORY TOTALS
+  //    BUILD STATE-WISE & CATEGORY TOTALS
   // ========================================
   Map<String, Map<int, num>> stateCategoryTotals = {};
   Map<int, num> categoryTotals = {};
@@ -278,7 +322,7 @@ Future<void> generateStateProductExcel() async {
   }
 
   // ========================================
-  //           WRITE STATE ROWS
+  //               STATE ROWS
   // ========================================
   for (int r = 0; r < allocatedStates.length; r++) {
     String stateName = allocatedStates[r];
@@ -313,7 +357,7 @@ Future<void> generateStateProductExcel() async {
       }
     }
 
-    // TOTAL COLUMN → Green if >0, Red if zero (NEW LOGIC)
+    // TOTAL column (Green if >0, else Red)
     var totalCell = sheetObject.cell(
       CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
     );
@@ -323,12 +367,12 @@ Future<void> generateStateProductExcel() async {
       totalCell.cellStyle = greenTotalStyle;
     } else {
       totalCell.value = 0;
-      totalCell.cellStyle = redBodyStyle; // red for zero totals
+      totalCell.cellStyle = redBodyStyle;
     }
   }
 
   // ========================================
-  //     ADD EMPTY ROW BEFORE GRAND TOTAL
+  //       EMPTY ROW BEFORE GRAND TOTAL
   // ========================================
   int emptyRow2 = headerRow + 1 + allocatedStates.length;
 
@@ -339,7 +383,7 @@ Future<void> generateStateProductExcel() async {
   }
 
   // ========================================
-  //           GRAND TOTAL ROW
+  //            GRAND TOTAL ROW
   // ========================================
   int grandRow = emptyRow2 + 1;
 
@@ -364,7 +408,7 @@ Future<void> generateStateProductExcel() async {
     cell.cellStyle = yellowStyle;
   }
 
-  // GRAND TOTAL → Green if >0 else Red (NEW LOGIC)
+  // TOTAL of grand total
   var totalGrandCell = sheetObject.cell(
     CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: grandRow),
   );
@@ -380,7 +424,6 @@ Future<void> generateStateProductExcel() async {
   // ========================================
   //              SAVE & SHARE
   // ========================================
-
   final dir = await getTemporaryDirectory();
   final filePath = "${dir.path}/State_Product_Report_${staff['name']}.xlsx";
 
@@ -391,7 +434,6 @@ Future<void> generateStateProductExcel() async {
   await Share.shareXFiles([XFile(filePath)],
       text: "State Product Report - ${staff['name']}");
 }
-
 
  @override
 Widget build(BuildContext context) {
@@ -488,44 +530,71 @@ Container(
         ),
       );
     }).toList(),
-    onChanged: (value) {
+    onChanged: (value) async{
       setState(() {
         selectedStaff = value;
       });
+            await getcustomer(value);
+
     },
   ),
 ),
 
 
-          
-if (selectedStaff != null)
-  Center(
-    child: Padding(
-      padding: const EdgeInsets.only(top: 30),
-      child: ElevatedButton(
+ if (selectedStaff != null)
+  Column(
+    children: [
+      // ====== STATE PRODUCT REPORT BUTTON ======
+      Padding(
+        padding: const EdgeInsets.only(top: 30),
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+            backgroundColor: const Color(0xFF1AA48F),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () {
+            generateStateProductExcel();
+          },
+          child: const Text(
+            "State Product Report",
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+
+      const SizedBox(height: 20),
+
+      // ====== NEW CUSTOMER PRODUCT REPORT BUTTON ======
+      ElevatedButton(
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-          backgroundColor: const Color(0xFF1AA48F),
+          backgroundColor: Colors.blueAccent,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         onPressed: () {
-          generateStateProductExcel();
-
-         
+          // generateCustomerProductExcel();  // NEW FUNCTION
         },
         child: const Text(
-          "State Product Report",
+          "Customer Product Report",
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
-    ),
+    ],
   ),
+
 
         ],
       ),
