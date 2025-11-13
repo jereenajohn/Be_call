@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:be_call/Contact_list.dart';
 import 'package:be_call/add_contact.dart';
 import 'package:be_call/add_contry.dart';
+import 'package:be_call/add_distric.dart';
 import 'package:be_call/add_state.dart';
 import 'package:be_call/add_state_cubit.dart';
 import 'package:be_call/api.dart';
@@ -12,6 +13,7 @@ import 'package:be_call/callreport_statewise.dart';
 import 'package:be_call/countries_cubit.dart';
 import 'package:be_call/dialerpage.dart';
 import 'package:be_call/homepage.dart';
+import 'package:be_call/product_wise_manual_report.dart';
 import 'package:be_call/survay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -358,6 +360,37 @@ class _SettingsPageState extends State<SettingsPage> {
                           );
                         },
                       ),
+
+                      const Divider(color: Colors.black54, height: 1),
+
+                      _settingsTile(
+                        icon: Icons.star,
+                        label: 'District',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AddDistric(),
+                            ),
+                          );
+                        },
+                      ),
+
+                        const Divider(color: Colors.black54, height: 1),
+
+                      _settingsTile(
+                        icon: Icons.star,
+                        label: 'product report',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProductWiseManualReport(),
+                            ),
+                          );
+                        },
+                      ),
+
 
                       const Divider(color: Colors.black54, height: 1),
 

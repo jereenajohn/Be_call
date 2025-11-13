@@ -26,9 +26,10 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
 
   List<dynamic> _states = [];
   String? _selectedState;
+  String ?_selectedDistrict;
   List<dynamic> _customers = [];
   bool _loading = true;
-  bool _stateLoading = true;
+      bool _stateLoading = true;
 
   Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -46,8 +47,42 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
     _phoneCtrl.text = widget.phoneNumber;
     _fetchCustomers();
     _fetchStates();
+    getDistrict();
   }
+  List<Map<String, dynamic>> district = [];
 
+
+  Future<void> getDistrict() async {
+    try {
+      final token = await getToken();
+      final response = await https.get(
+        Uri.parse('$api/api/districts/add/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+print(response.body);
+      if (response.statusCode == 200) {
+        final parsed = jsonDecode(response.body);
+        final dataList = parsed['data'] as List;
+
+        setState(() {
+          district = dataList
+              .map((q) => {
+                    'id': q['id'],
+                    'state_name': q['state_name'],
+                    'name': q['name'],
+                  
+                  })
+              .toList();
+        });
+        print(district);
+      }
+    } catch (error) {
+      debugPrint('Error fetching questions: $error');
+    }
+  }
   Future<void> _fetchStates() async {
     try {
       final token = await getToken();
@@ -146,6 +181,7 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
           "phone": phone,
           "email": email,
           "state": _selectedState,
+          "district": _selectedDistrict,
         }),
       );
 
@@ -256,12 +292,29 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
                         validator: (v) => v == null ? "Select a state" : null,
                       ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _emailCtrl,
-                    decoration: _inputDecoration('Email (optional)'),
-                    keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
-                  ),
+                  DropdownButtonFormField<String>(
+                        value: _selectedDistrict,
+                        decoration: _inputDecoration("Select district"),
+                        dropdownColor: Colors.grey[900],
+                        style: const TextStyle(color: Colors.white),
+                        items:
+                            district.map<DropdownMenuItem<String>>((s) {
+                              return DropdownMenuItem<String>(
+                                value: s['id'].toString(),
+                                child: Text(
+                                  s['name'],
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          setState(() => _selectedDistrict = value);
+                        },
+                        validator: (v) => v == null ? "Select a district" : null,
+                      ),
+                  const SizedBox(height: 16),
+
+                  
                   const SizedBox(height: 28),
                   SizedBox(
                     width: double.infinity,
