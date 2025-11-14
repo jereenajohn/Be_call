@@ -36,7 +36,7 @@ class SurveyAnswer {
       customer: (j['customer_name'] == null || (j['customer_name'] as String).trim().isEmpty)
           ? '— No Customer —'
           : j['customer_name'],
-      answer: j['answer'] ?? '-',
+      answer: j['answer'] ?? '-', 
       note: j['note'],
       createdAt: DateTime.parse(j['created_at']).toLocal(),
     );
