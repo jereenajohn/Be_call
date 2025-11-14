@@ -23,6 +23,8 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
 
   String? selectedCustomer;
   String? selectedCategory;
+  String billsCount = "";
+
 
   final TextEditingController qtyCtrl = TextEditingController();
 
@@ -177,7 +179,25 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
 
     print('Response status: ${response.statusCode}');
     print('Response body: ${response.body}');
+    final response = await https.post(
+      Uri.parse('$api/api/staff/custom/order/update/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: body,
+    );
 
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.teal,
+          content: Text('Product added successfully.'),
+        ),
+      );
     if (response.statusCode == 201) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

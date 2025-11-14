@@ -182,6 +182,12 @@ class _ProductReportViewState extends State<ProductReportView> {
                 ),
               )
               .toList();
+
+      // Reset selectedStaff if not in filtered list
+      if (selectedStaff != null &&
+          !filteredStaffList.any((s) => s['id'].toString() == selectedStaff)) {
+        selectedStaff = null;
+      }
     });
   }
 
@@ -195,258 +201,268 @@ class _ProductReportViewState extends State<ProductReportView> {
   // ==========================================================
   //            STATE PRODUCT EXCEL GENERATION
   // ==========================================================
-Future<void> generateStateProductExcel() async {
-  if (selectedStaff == null || startDate == null || endDate == null) return;
+  Future<void> generateStateProductExcel() async {
+    if (selectedStaff == null || startDate == null || endDate == null) return;
 
-  var staff = staffList.firstWhere((s) => s['id'].toString() == selectedStaff);
-  List<dynamic> allocatedStates = staff['allocated_states_names'];
-
-  List<String> categories =
-      categoryList.map((e) => e['name'].toString()).toList();
-
-  var excel = Excel.createExcel();
-  Sheet sheetObject = excel['State_Product_Report'];
-
-  // ---------- STYLES ----------
-  CellStyle titleStyle = CellStyle(
-    bold: true,
-    fontColorHex: "#000000",
-    backgroundColorHex: "#FF0000",
-    horizontalAlign: HorizontalAlign.Center,
-    verticalAlign: VerticalAlign.Center,
-    fontSize: 14,
-  );
-
-  CellStyle headerStyle = CellStyle(
-    bold: true,
-    fontColorHex: "#000000",
-    backgroundColorHex: "#ADD8E6",
-    horizontalAlign: HorizontalAlign.Center,
-  );
-
-  CellStyle redBodyStyle = CellStyle(
-    bold: false,
-    fontColorHex: "#000000",
-    backgroundColorHex: "#FF0000",
-    horizontalAlign: HorizontalAlign.Center,
-  );
-
-  CellStyle yellowStyle = CellStyle(
-    bold: true,
-    fontColorHex: "#000000",
-    backgroundColorHex: "#FFFF00",
-    horizontalAlign: HorizontalAlign.Center,
-  );
-
-  CellStyle greenTotalStyle = CellStyle(
-    bold: true,
-    fontColorHex: "#000000",
-    backgroundColorHex: "#00FF00",
-    horizontalAlign: HorizontalAlign.Center,
-  );
-
-  CellStyle orangeStyle = CellStyle(
-  bold: true,
-  fontColorHex: "#000000",
-  backgroundColorHex: "#FFA500", // ORANGE
-  horizontalAlign: HorizontalAlign.Center,
-);
-
-CellStyle redStyle = CellStyle(
-  bold: true,
-  fontColorHex: "#FFFFFF",
-  backgroundColorHex: "#FF0000", // RED
-  horizontalAlign: HorizontalAlign.Center,
-);
-
-
-  int totalColumns = categories.length + 3;
-
-  // ---------- TITLE ----------
-  sheetObject.merge(
-    CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
-    CellIndex.indexByColumnRow(columnIndex: totalColumns - 1, rowIndex: 0),
-  );
-
-  var titleCell =
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0));
-
-  titleCell.value =
-      "State Product Report - ${staff['name']} (${startDate!.toString().substring(0, 10)} to ${endDate!.toString().substring(0, 10)})";
-  titleCell.cellStyle = titleStyle;
-
-  // ---------- HEADER ROW ----------
-  int headerRow = 2;
-
-  List<String> headerTitles = ["STATE", "TOTAL BILLS", "TOTAL"];
-  headerTitles.addAll(categories);
-
-  for (int i = 0; i < headerTitles.length; i++) {
-    var cell = sheetObject.cell(
-      CellIndex.indexByColumnRow(columnIndex: i, rowIndex: headerRow),
+    var staff = staffList.firstWhere(
+      (s) => s['id'].toString() == selectedStaff,
     );
-    cell.value = headerTitles[i];
-    cell.cellStyle = headerStyle;
-  }
+    List<dynamic> allocatedStates = staff['allocated_states_names'];
 
-  // ---------- BUILD TOTALS ----------
-  Map<String, Map<int, num>> stateCategoryTotals = {};
-  Map<int, num> categoryTotals = {};
-  Map<String, num> stateBillTotals = {};
+    List<String> categories =
+        categoryList.map((e) => e['name'].toString()).toList();
 
-  for (var entry in report) {
-    bool staffMatch = entry["staff"].toString() == selectedStaff;
+    var excel = Excel.createExcel();
+    Sheet sheetObject = excel['State_Product_Report'];
 
-    DateTime? entryDate = DateTime.tryParse(entry["date"] ?? "");
-    if (entryDate == null) continue;
+    // ---------- STYLES ----------
+    CellStyle titleStyle = CellStyle(
+      bold: true,
+      fontColorHex: "#000000",
+      backgroundColorHex: "#FF0000",
+      horizontalAlign: HorizontalAlign.Center,
+      verticalAlign: VerticalAlign.Center,
+      fontSize: 14,
+    );
 
-    bool dateMatch =
-        entryDate.isAfter(startDate!.subtract(const Duration(days: 1))) &&
-            entryDate.isBefore(endDate!.add(const Duration(days: 1)));
+    CellStyle headerStyle = CellStyle(
+      bold: true,
+      fontColorHex: "#000000",
+      backgroundColorHex: "#ADD8E6",
+      horizontalAlign: HorizontalAlign.Center,
+    );
 
-    if (!staffMatch || !dateMatch) continue;
+    CellStyle redBodyStyle = CellStyle(
+      bold: false,
+      fontColorHex: "#000000",
+      backgroundColorHex: "#FF0000",
+      horizontalAlign: HorizontalAlign.Center,
+    );
 
-    String state = entry["customer_state"] ?? "Unknown";
+    CellStyle yellowStyle = CellStyle(
+      bold: true,
+      fontColorHex: "#000000",
+      backgroundColorHex: "#FFFF00",
+      horizontalAlign: HorizontalAlign.Center,
+    );
 
-    stateCategoryTotals.putIfAbsent(state, () => {});
-    stateBillTotals.putIfAbsent(state, () => 0);
+    CellStyle greenTotalStyle = CellStyle(
+      bold: true,
+      fontColorHex: "#000000",
+      backgroundColorHex: "#00FF00",
+      horizontalAlign: HorizontalAlign.Center,
+    );
 
-    // Bill count
-    num bills = num.tryParse(entry["note"] ?? "0") ?? 0;
-    stateBillTotals[state] = (stateBillTotals[state] ?? 0) + bills;
+    CellStyle orangeStyle = CellStyle(
+      bold: true,
+      fontColorHex: "#000000",
+      backgroundColorHex: "#FFA500", // ORANGE
+      horizontalAlign: HorizontalAlign.Center,
+    );
 
-    // Category qty
-    if (entry["items"] != null) {
-      for (var item in entry["items"]) {
-        int categoryId = item["category"];
-        num qty = item["quantity"];
+    CellStyle redStyle = CellStyle(
+      bold: true,
+      fontColorHex: "#FFFFFF",
+      backgroundColorHex: "#FF0000", // RED
+      horizontalAlign: HorizontalAlign.Center,
+    );
 
-        stateCategoryTotals[state]!.update(categoryId, (v) => v + qty,
-            ifAbsent: () => qty);
+    int totalColumns = categories.length + 3;
 
-        categoryTotals.update(categoryId, (v) => v + qty,
-            ifAbsent: () => qty);
+    // ---------- TITLE ----------
+    sheetObject.merge(
+      CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
+      CellIndex.indexByColumnRow(columnIndex: totalColumns - 1, rowIndex: 0),
+    );
+
+    var titleCell = sheetObject.cell(
+      CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 0),
+    );
+
+    titleCell.value =
+        "State Product Report - ${staff['name']} (${startDate!.toString().substring(0, 10)} to ${endDate!.toString().substring(0, 10)})";
+    titleCell.cellStyle = titleStyle;
+
+    // ---------- HEADER ROW ----------
+    int headerRow = 2;
+
+    List<String> headerTitles = ["STATE", "TOTAL BILLS", "TOTAL"];
+    headerTitles.addAll(categories);
+
+    for (int i = 0; i < headerTitles.length; i++) {
+      var cell = sheetObject.cell(
+        CellIndex.indexByColumnRow(columnIndex: i, rowIndex: headerRow),
+      );
+      cell.value = headerTitles[i];
+      cell.cellStyle = headerStyle;
+    }
+
+    // ---------- BUILD TOTALS ----------
+    Map<String, Map<int, num>> stateCategoryTotals = {};
+    Map<int, num> categoryTotals = {};
+    Map<String, num> stateBillTotals = {};
+
+    for (var entry in report) {
+      bool staffMatch = entry["staff"].toString() == selectedStaff;
+
+      DateTime? entryDate = DateTime.tryParse(entry["date"] ?? "");
+      if (entryDate == null) continue;
+
+      bool dateMatch =
+          entryDate.isAfter(startDate!.subtract(const Duration(days: 1))) &&
+          entryDate.isBefore(endDate!.add(const Duration(days: 1)));
+
+      if (!staffMatch || !dateMatch) continue;
+
+      String state = entry["customer_state"] ?? "Unknown";
+
+      stateCategoryTotals.putIfAbsent(state, () => {});
+      stateBillTotals.putIfAbsent(state, () => 0);
+
+      // Bill count
+      num bills = num.tryParse(entry["note"] ?? "0") ?? 0;
+      stateBillTotals[state] = (stateBillTotals[state] ?? 0) + bills;
+
+      // Category qty
+      if (entry["items"] != null) {
+        for (var item in entry["items"]) {
+          int categoryId = item["category"];
+          num qty = item["quantity"];
+
+          stateCategoryTotals[state]!.update(
+            categoryId,
+            (v) => v + qty,
+            ifAbsent: () => qty,
+          );
+
+          categoryTotals.update(
+            categoryId,
+            (v) => v + qty,
+            ifAbsent: () => qty,
+          );
+        }
       }
     }
-  }
 
-  // ---------- COMPILE FINAL STATE LIST ----------
-  List<String> excelStateList =
-      allocatedStates.map((e) => e.toString()).toList();
+    // ---------- COMPILE FINAL STATE LIST ----------
+    List<String> excelStateList =
+        allocatedStates.map((e) => e.toString()).toList();
 
-  Set<String> reportStates = stateCategoryTotals.keys.toSet();
-  for (var s in reportStates) {
-    if (!excelStateList.contains(s)) {
-      excelStateList.add(s);
+    Set<String> reportStates = stateCategoryTotals.keys.toSet();
+    for (var s in reportStates) {
+      if (!excelStateList.contains(s)) {
+        excelStateList.add(s);
+      }
     }
-  }
 
-  // ---------- WRITE STATE ROWS ----------
-  int rowIndex = headerRow + 1;
+    // ---------- WRITE STATE ROWS ----------
+    int rowIndex = headerRow + 1;
 
-  for (String state in excelStateList) {
-    // STATE
-    sheetObject
-        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
-      ..value = state;
+    for (String state in excelStateList) {
+      // STATE
+      sheetObject.cell(
+        CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
+      )..value = state;
 
-    // TOTAL BILLS
-    num bills = stateBillTotals[state] ?? 0;
-  var billCell = sheetObject.cell(
-  CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
-);
-billCell.value = bills;
+      // TOTAL BILLS
+      num bills = stateBillTotals[state] ?? 0;
+      var billCell = sheetObject.cell(
+        CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
+      );
+      billCell.value = bills;
 
-// ORANGE if >0, RED if 0
-if (bills > 0) {
-  billCell.cellStyle = orangeStyle;
-} else {
-  billCell.cellStyle = redStyle;
-}
+      // ORANGE if >0, RED if 0
+      if (bills > 0) {
+        billCell.cellStyle = orangeStyle;
+      } else {
+        billCell.cellStyle = redStyle;
+      }
 
-    // TOTAL QTY
-    num totalQty = 0;
+      // TOTAL QTY
+      num totalQty = 0;
+
+      for (int c = 0; c < categories.length; c++) {
+        int categoryId = categoryList[c]['id'];
+        num qty =
+            stateCategoryTotals[state]?[categoryId] == null
+                ? 0
+                : stateCategoryTotals[state]![categoryId]!;
+
+        totalQty += qty;
+
+        var cell = sheetObject.cell(
+          CellIndex.indexByColumnRow(columnIndex: c + 3, rowIndex: rowIndex),
+        );
+        cell.value = qty;
+
+        cell.cellStyle = qty > 0 ? yellowStyle : redBodyStyle;
+      }
+
+      // TOTAL COLUMN
+      var totalCell = sheetObject.cell(
+        CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex),
+      );
+      totalCell.value = totalQty;
+      totalCell.cellStyle = totalQty > 0 ? greenTotalStyle : redBodyStyle;
+
+      rowIndex++;
+    }
+
+    // ---------- GRAND TOTAL ----------
+    rowIndex++;
+    var grandCell = sheetObject.cell(
+      CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
+    );
+    grandCell.value = "GRAND TOTAL";
+    grandCell.cellStyle = yellowStyle;
+
+    num totalBillsGrand = stateBillTotals.values.fold(
+      0,
+      (sum, value) => sum + value,
+    );
+
+    // GRAND TOTAL BILLS
+    var grandBillsCell = sheetObject.cell(
+      CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
+    );
+    grandBillsCell.value = totalBillsGrand;
+    grandBillsCell.cellStyle = totalBillsGrand > 0 ? orangeStyle : redStyle;
+
+    // CATEGORY GRAND TOTAL
+    num grandTotal = 0;
 
     for (int c = 0; c < categories.length; c++) {
       int categoryId = categoryList[c]['id'];
-      num qty =
-          stateCategoryTotals[state]?[categoryId] == null ? 0 : stateCategoryTotals[state]![categoryId]!;
-
-      totalQty += qty;
+      num qty = categoryTotals[categoryId] ?? 0;
+      grandTotal += qty;
 
       var cell = sheetObject.cell(
         CellIndex.indexByColumnRow(columnIndex: c + 3, rowIndex: rowIndex),
       );
       cell.value = qty;
-
-      cell.cellStyle = qty > 0 ? yellowStyle : redBodyStyle;
+      cell.cellStyle = yellowStyle;
     }
 
-    // TOTAL COLUMN
-    var totalCell = sheetObject.cell(
+    // WRITE GRAND TOTAL QTY
+    var totalQtyCell = sheetObject.cell(
       CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex),
     );
-    totalCell.value = totalQty;
-    totalCell.cellStyle = totalQty > 0 ? greenTotalStyle : redBodyStyle;
 
-    rowIndex++;
+    totalQtyCell.value = grandTotal;
+    totalQtyCell.cellStyle = grandTotal > 0 ? greenTotalStyle : redBodyStyle;
+
+    // SAVE FILE
+    final dir = await getTemporaryDirectory();
+    final filePath = "${dir.path}/State_Product_Report_${staff['name']}.xlsx";
+
+    File(filePath)
+      ..createSync(recursive: true)
+      ..writeAsBytesSync(excel.encode()!);
+
+    await Share.shareXFiles([
+      XFile(filePath),
+    ], text: "State Product Report - ${staff['name']}");
   }
-
-  // ---------- GRAND TOTAL ----------
-  rowIndex++;
-  var grandCell =
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex));
-  grandCell.value = "GRAND TOTAL";
-  grandCell.cellStyle = yellowStyle;
-
-  num totalBillsGrand =
-      stateBillTotals.values.fold(0, (sum, value) => sum + value);
-
-  // GRAND TOTAL BILLS
-  var grandBillsCell =
-      sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex));
-  grandBillsCell.value = totalBillsGrand;
-grandBillsCell.cellStyle =
-    totalBillsGrand > 0 ? orangeStyle : redStyle;
-
-
-  // CATEGORY GRAND TOTAL
-  num grandTotal = 0;
-
-  for (int c = 0; c < categories.length; c++) {
-    int categoryId = categoryList[c]['id'];
-    num qty = categoryTotals[categoryId] ?? 0;
-    grandTotal += qty;
-
-    var cell = sheetObject.cell(
-      CellIndex.indexByColumnRow(columnIndex: c + 3, rowIndex: rowIndex),
-    );
-    cell.value = qty;
-    cell.cellStyle = yellowStyle;
-  }
-
-  // WRITE GRAND TOTAL QTY
-var totalQtyCell = sheetObject.cell(
-  CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex),
-);
-
-totalQtyCell.value = grandTotal;
-totalQtyCell.cellStyle = grandTotal > 0 ? greenTotalStyle : redBodyStyle;
-
-
-  // SAVE FILE
-  final dir = await getTemporaryDirectory();
-  final filePath =
-      "${dir.path}/State_Product_Report_${staff['name']}.xlsx";
-
-  File(filePath)
-    ..createSync(recursive: true)
-    ..writeAsBytesSync(excel.encode()!);
-
-  await Share.shareXFiles([XFile(filePath)],
-      text: "State Product Report - ${staff['name']}");
-}
-
 
   // ==========================================================
   //          CUSTOMER PRODUCT EXCEL GENERATION
@@ -826,40 +842,54 @@ totalQtyCell.cellStyle = grandTotal > 0 ? greenTotalStyle : redBodyStyle;
                   ),
                 ],
               ),
-              child: DropdownButtonFormField<String>(
-                dropdownColor: Colors.grey[900],
-                isExpanded: true,
-                value: selectedStaff,
-                icon: const Icon(
-                  Icons.keyboard_arrow_down,
-                  color: Color(0xFF1AA48F),
-                ),
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                ),
-                items:
-                    filteredStaffList.map((s) {
-                      return DropdownMenuItem(
-                        value: s['id'].toString(),
-                        child: Text(
-                          s['name'],
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      );
-                    }).toList(),
-                onChanged: (value) async {
-                  setState(() {
-                    selectedStaff = value;
-                    // ⭐ Reset date range to avoid null crash
-                    startDate = null;
-                    endDate = null;
-                  });
-                  await getcustomer(value);
+
+              child: Builder(
+                builder: (_) {
+                  // ⭐ FIX: Prevent crash if selectedStaff doesn't exist
+                  if (selectedStaff != null) {
+                    bool exists = filteredStaffList.any(
+                      (s) => s['id'].toString() == selectedStaff,
+                    );
+
+                    if (!exists) selectedStaff = null;
+                  }
+
+                  return DropdownButtonFormField<String>(
+                    dropdownColor: Colors.grey[900],
+                    isExpanded: true,
+                    value: selectedStaff,
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Color(0xFF1AA48F),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    items:
+                        filteredStaffList.map((s) {
+                          return DropdownMenuItem(
+                            value: s['id'].toString(),
+                            child: Text(
+                              s['name'],
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          );
+                        }).toList(),
+                    onChanged: (value) async {
+                      setState(() {
+                        selectedStaff = value;
+                        startDate = null;
+                        endDate = null;
+                      });
+                      await getcustomer(value);
+                    },
+                  );
                 },
               ),
             ),
+
             const SizedBox(height: 20),
             const Text(
               "Select Date Range",
