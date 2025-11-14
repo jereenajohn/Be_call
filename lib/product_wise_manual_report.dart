@@ -143,56 +143,61 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
   }
 
   Future<void> submitReport() async {
-    try {
-      final token = await getTokenFromPrefs();
-      if (token == null || selectedCustomer == null) return;
+  try {
+    final token = await getTokenFromPrefs();
+    if (token == null || selectedCustomer == null) return;
 
-      List<Map<String, dynamic>> products =
-          productRows
-              .where((row) => row['category'] != null && row['qty']!.isNotEmpty)
-              .map(
-                (row) => {
-                  'category': row['category'],
-                  'quantity': int.parse(row['qty']),
-                },
-              )
-              .toList();
-      print("products: $products");
+    List<Map<String, dynamic>> products =
+        productRows
+            .where((row) => row['category'] != null && row['qty']!.isNotEmpty)
+            .map(
+              (row) => {
+                'category': row['category'],
+                'quantity': int.parse(row['qty']),
+              },
+            )
+            .toList();
 
-      final body = jsonEncode({
-        'customer': selectedCustomer,
-        'items': products,
-        'date': selectedDate != null ? formatDate(selectedDate!) : null,
-      });
+    print("products: $products");
 
-      final response = await https.post(
-        Uri.parse('$api/api/staff/custom/order/update/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: body,
-      );
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    final body = jsonEncode({
+      'customer': selectedCustomer,
+      'items': products,
+      'date': formatDate(DateTime.now()), // ✅ Always send today's date
+    });
 
-      if (response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Colors.teal,
-        content: Text('Product added successfully.'),
-      ),
+    final response = await https.post(
+      Uri.parse('$api/api/staff/custom/order/update/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: body,
     );
 
-    Navigator.push(context, MaterialPageRoute(builder: (context)=>ProductWiseManualReport()));
-        // Handle success
-      } else {
-        // Handle error
-      }
-    } catch (error) {
-      print('Error submitting report: $error');
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.teal,
+          content: Text('Product added successfully.'),
+        ),
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ProductWiseManualReport()),
+      );
+    } else {
+      // Handle error
     }
+  } catch (error) {
+    print('Error submitting report: $error');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -457,50 +462,50 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
                 }),
               ),
               // DATE PICKER
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Select Date",
-                    style: TextStyle(color: green, fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                  InkWell(
-                    onTap: pickDate,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        border: Border.all(color: green, width: 0.7),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            selectedDate == null
-                                ? "Select date"
-                                : "${selectedDate!.day}-${selectedDate!.month}-${selectedDate!.year}",
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                            ),
-                          ),
-                          const Icon(
-                            Icons.calendar_today,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
+              // Column(
+              //   crossAxisAlignment: CrossAxisAlignment.start,
+              //   children: [
+              //     Text(
+              //       "Select Date",
+              //       style: TextStyle(color: green, fontSize: 13),
+              //     ),
+              //     const SizedBox(height: 4),
+              //     InkWell(
+              //       onTap: pickDate,
+              //       child: Container(
+              //         padding: const EdgeInsets.symmetric(
+              //           vertical: 10,
+              //           horizontal: 12,
+              //         ),
+              //         decoration: BoxDecoration(
+              //           color: Colors.black,
+              //           border: Border.all(color: green, width: 0.7),
+              //           borderRadius: BorderRadius.circular(8),
+              //         ),
+              //         child: Row(
+              //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //           children: [
+              //             Text(
+              //               selectedDate == null
+              //                   ? "Select date"
+              //                   : "${selectedDate!.day}-${selectedDate!.month}-${selectedDate!.year}",
+              //               style: const TextStyle(
+              //                 color: Colors.white,
+              //                 fontSize: 13,
+              //               ),
+              //             ),
+              //             const Icon(
+              //               Icons.calendar_today,
+              //               color: Colors.white,
+              //               size: 16,
+              //             ),
+              //           ],
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              // const SizedBox(height: 15),
 
               // SMALL ADD BUTTON
               ElevatedButton.icon(
