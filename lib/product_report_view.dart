@@ -55,7 +55,7 @@ class _ProductReportViewState extends State<ProductReportView> {
         },
       );
 
-      print('Response status customer: ${response.statusCode}');
+      print('Response status customerrrrr: ${response.statusCode}');
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
