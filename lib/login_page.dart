@@ -31,97 +31,63 @@ Future login(String email, String password, BuildContext context) async {
   try {
     var response = await http.post(
       Uri.parse('$api/api/login/'),
-      body: {"username": email, "password": password},
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "username": email,
+        "password": password,
+      }),
     );
+
+    print("LOGIN RESPONSE: ${response.body}");
 
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
-      var status = responseData['status'];
-print(responseData);
-      if (status == 'success') {
+
+      if (responseData['status'] == 'success') {
         var token = responseData['token'];
-        var active = responseData['active'];
         var name = responseData['name'];
         var warehouse = responseData['warehouse_id'] ?? 0;
 
-        // Decode JWT token to get user id
+        // Decode JWT
         List<String> parts = token.split('.');
-        if (parts.length == 3) {
-          String payload = parts[1];
-          String normalized = base64.normalize(payload);
-          Map<String, dynamic> payloadMap =
-              jsonDecode(utf8.decode(base64.decode(normalized)));
-          var userId = payloadMap['id'];
-          var userRole = payloadMap['active']; // e.g. ADMIN, STAFF, etc.
+        String payload = base64.normalize(parts[1]);
+        Map<String, dynamic> payloadMap =
+            jsonDecode(utf8.decode(base64.decode(payload)));
 
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString('token', token);
-          await prefs.setString('username', name);
-          await prefs.setInt('warehouse_id', warehouse);
-          await prefs.setInt('id', userId);
-          await prefs.setString('role', userRole);
+        var userId = payloadMap['id'];
+        var userRole = payloadMap['role']; // FIXED
 
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+        await prefs.setString('username', name);
+        await prefs.setInt('warehouse_id', warehouse);
+        await prefs.setInt('id', userId);
+        await prefs.setString('role', userRole);
 
-          // ✅ Navigate based on role
-          if (userRole == 'ADMIN') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminDashboard()),
-            );
-          }
-           else if (userRole == 'CEO') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminDashboard()),
-            );
-          }
-            else if (userRole == 'COO') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminDashboard()),
-            );
-          }
-           else {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const Homepage()),
-            );
-          }
+        if (userRole == 'ADMIN' ||
+            userRole == 'CEO' ||
+            userRole == 'COO') {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => const AdminDashboard()));
+        } else {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => const Homepage()));
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.green,
-            content: Text('Successfully logged in.'),
-          ),
-        );
+            const SnackBar(content: Text("Successfully logged in.")));
       } else {
-        String errorMessage = responseData['message'] ?? 'Login failed....';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(backgroundColor: Colors.red, content: Text(errorMessage)),
-        );
+            SnackBar(content: Text(responseData['message'] ?? "Login failed")));
       }
     } else {
-      String errorMessage = 'An error occurred. Please try again.';
-      try {
-        var responseData = jsonDecode(response.body);
-        if (responseData['message'] != null) {
-          errorMessage = responseData['message'];
-        }
-      } catch (_) {
-
-      }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text(errorMessage)),
-      );
+          const SnackBar(content: Text("Login failed. Please try again")));
     }
   } catch (e) {
+    print("LOGIN ERROR: $e");
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: Colors.red,
-        content: Text('An error occurred. Please try again.'),
-      ),
-    );
+        const SnackBar(content: Text("Error connecting to server")));
   }
 }
 
@@ -225,6 +191,8 @@ Widget build(BuildContext context) {
                     ),
                     const SizedBox(height: 20),
                      TextField(
+                      obscureText: true,
+
                       controller: passwordController,
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       decoration: InputDecoration(
