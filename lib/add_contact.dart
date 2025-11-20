@@ -89,7 +89,10 @@ print(response.body);
       final url = Uri.parse("$api/api/states/");
       final response = await https.get(
         url,
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+        
+        },
       );
 
 

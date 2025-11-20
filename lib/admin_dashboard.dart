@@ -93,7 +93,7 @@ getDateWise();
   try {
     var res = await http.get(
       Uri.parse("$api/api/call/report/"),
-      headers: {"Authorization": "Bearer $token"},
+      headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
     );
 
 
@@ -167,7 +167,7 @@ getDateWise();
 
     final response = await http.get(
       Uri.parse('$api/api/call/report/'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': 'Bearer $token',"Content-Type": "application/json",},
     );
 
 
@@ -210,7 +210,7 @@ getDateWise();
     try {
       final response = await https.get(
         Uri.parse("$api/api/call/report/summary/"),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
 
       if (response.statusCode == 200) {
@@ -243,7 +243,7 @@ getDateWise();
     try {
       var response = await https.get(
         Uri.parse("$api/api/users/$userId/"),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
 
       if (response.statusCode == 200) {
