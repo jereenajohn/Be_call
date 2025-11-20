@@ -22,7 +22,7 @@ class StatesCubit extends Cubit<StatesState> {
       final url = Uri.parse("$api/api/states/");
       final response = await http.get(
         url,
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
       
       if (response.statusCode == 200) {

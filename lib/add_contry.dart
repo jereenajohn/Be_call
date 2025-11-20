@@ -40,7 +40,7 @@ Future<void> _fetchCountries() async {
   try {
     var response = await https.get(
       Uri.parse("$api/api/country/codes/"),
-      headers: {"Authorization": "Bearer $token"},
+      headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
     );
 
 
@@ -70,6 +70,7 @@ Future<void> _fetchCountries() async {
       headers: {
          
           "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
         },
       body:{
         // "name":_NameCtrl.text,
