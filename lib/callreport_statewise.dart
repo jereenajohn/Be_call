@@ -52,7 +52,7 @@ class _CallreportStatewiseState extends State<CallreportStatewise> {
 
       final response = await http.get(
         Uri.parse('$api/api/call/report/'),
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {'Authorization': 'Bearer $token',"Content-Type": "application/json",},
       );
 
 

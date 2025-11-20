@@ -92,7 +92,7 @@
       try {
         var response = await https.get(
           Uri.parse("$api/api/contact/info/staff/$id/"),
-          headers: {"Authorization": "Bearer $token"},
+          headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
         );
 
         if (response.statusCode == 200) {
@@ -155,7 +155,7 @@
         final checkUrl = Uri.parse('$api/api/contact/info/?search=$phone');
         final checkResponse = await https.get(
           checkUrl,
-          headers: {"Authorization": "Bearer $token"},
+          headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
         );
         if (checkResponse.statusCode == 200) {
           final List<dynamic> existingContacts = json.decode(checkResponse.body);
@@ -225,7 +225,7 @@
 
         final response = await https.get(
           Uri.parse('$api/api/states/'),
-          headers: {"Authorization": "Bearer $token"},
+          headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
         );
 
         if (response.statusCode == 200) {
