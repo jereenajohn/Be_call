@@ -45,7 +45,7 @@ class _SurvayState extends State<Survay> {
     try {
       final response = await http.get(
         Uri.parse("$api/api/profile/"),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
 
       if (response.statusCode == 200) {
