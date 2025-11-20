@@ -33,6 +33,8 @@ class _OtpPageState extends State<OtpPage> {
     try {
       final response = await http.post(
         Uri.parse('$api/api/otp/verify/'),
+              headers: {"Content-Type": "application/json"},
+
         body: {"otp": enteredOtp, "phone": widget.phoneNumber},
       );
 

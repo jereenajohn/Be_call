@@ -21,6 +21,7 @@ class StatesCubit extends Cubit<StatesState> {
         url,
         headers: {
           "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
         },
       );
       if (response.statusCode == 200) {

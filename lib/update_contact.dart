@@ -46,7 +46,7 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
       final token = await getToken();
       final response = await https.get(
         Uri.parse('$api/api/states/'),
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {'Authorization': 'Bearer $token',"Content-Type": "application/json",},
       );
 
       if (response.statusCode == 200) {
@@ -102,7 +102,7 @@ print(response.body);
       final token = await getToken();
       final response = await https.get(
         Uri.parse('$api/api/contact/info/${widget.id}/'),
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {'Authorization': 'Bearer $token',"Content-Type": "application/json",},
       );
 
       if (response.statusCode == 200) {

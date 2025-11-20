@@ -85,7 +85,7 @@ Future<void> _fetchStates() async {
     final url = Uri.parse("$api/api/states/");
     final response = await http.get(
       url,
-      headers: {"Authorization": "Bearer $token"},
+      headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
     );
 
     if (!mounted) return; // ✅ Prevent calling setState after dispose
