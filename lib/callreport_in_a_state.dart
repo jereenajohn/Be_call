@@ -36,7 +36,7 @@ class _StatewiseState extends State<Statewise> {
     try {
       final token = await getToken();
       final url = Uri.parse("$api/api/states/");
-      final response = await http.get(url, headers: {"Authorization": "Bearer $token"});
+      final response = await http.get(url, headers: {"Authorization": "Bearer $token","Content-Type": "application/json",});
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
@@ -67,7 +67,7 @@ class _StatewiseState extends State<Statewise> {
     try {
       final response = await http.get(
         Uri.parse("$api/api/call/report/state/$stateId/"),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
 
       if (response.statusCode == 200) {

@@ -49,7 +49,7 @@ class _DialerPageState extends State<DialerPage> {
     try {
       var response = await https.get(
         Uri.parse("$api/api/contact/info/staff/$id/"),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
 
       if (response.statusCode == 200) {

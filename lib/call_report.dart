@@ -61,7 +61,7 @@ class _CallReportState extends State<CallReport> {
 
       final activeResponse = await http.get(
         Uri.parse('$api/api/call/report/staff/$userId/'),
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {'Authorization': 'Bearer $token',"Content-Type": "application/json",},
       );
 
       final productiveResponse = await http.get(
@@ -134,7 +134,7 @@ class _CallReportState extends State<CallReport> {
     try {
       var response = await https.put(
         Uri.parse("$api/api/call/report/$id/"),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
         body: {'note': note},
       );
       print(response.statusCode);

@@ -57,7 +57,7 @@ class _HomepageState extends State<Homepage> {
     try {
       final response = await http.get(
         Uri.parse("$api/api/contact/info/staff/$id/"),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
      
       if (response.statusCode == 200) {

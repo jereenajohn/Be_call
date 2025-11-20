@@ -76,7 +76,7 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
       if (res.statusCode != 200) {
         res = await http.get(
           Uri.parse("$api/api/call/report/date/$fromStr/"),
-          headers: {"Authorization": "Bearer $token"},
+          headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
         );
       }
       print(res.statusCode);

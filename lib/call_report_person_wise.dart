@@ -202,7 +202,7 @@ class _CallreportpersonWiseState extends State<CallreportpersonWise> {
     try {
       var res = await http.get(
         Uri.parse("$api/api/call/report/staff/${widget.id}/"),
-        headers: {"Authorization": "Bearer $token"},
+        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
 
       if (res.statusCode == 200) {
