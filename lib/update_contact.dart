@@ -66,7 +66,7 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
   }
   List<Map<String, dynamic>> district = [];
  Future<void> getDistrict() async {
-    try {
+try {
       final token = await getToken();
       final response = await https.get(
         Uri.parse('$api/api/districts/add/'),

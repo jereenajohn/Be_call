@@ -22,9 +22,12 @@ class StatesCubit extends Cubit<StatesState> {
       final url = Uri.parse("$api/api/states/");
       final response = await http.get(
         url,
-        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
       );
-      
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
         final List<dynamic> data = jsonResponse['data'] ?? [];
@@ -271,8 +274,14 @@ class _AddstateFormPageState extends State<AddstateFormPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  ...sState.states.map(
-                                    (st) => Card(
+                                  ...sState.states.map((st) {
+                                    final country = st['country'];
+                                    final countryName =
+                                        country is Map
+                                            ? country['name']
+                                            : country; // extract name
+
+                                    return Card(
                                       color: Colors.grey[900],
                                       child: ListTile(
                                         title: Text(
@@ -281,31 +290,25 @@ class _AddstateFormPageState extends State<AddstateFormPage> {
                                             color: Colors.white,
                                           ),
                                         ),
-                                        subtitle: () {
-                                          final country = st['country'];
-                                          if (country is Map) {
-                                            return Text(
-                                              "Country: ${country['name']}",
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.7,
-                                                ),
-                                              ),
-                                            );
-                                          } else {
-                                            return Text(
-                                              "Country: $country",
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.7,
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        }(),
+
+                                        // SHOW SUBTITLE ONLY IF countryName IS NOT NULL AND NOT EMPTY
+                                        subtitle:
+                                            (countryName != null &&
+                                                    countryName
+                                                        .toString()
+                                                        .trim()
+                                                        .isNotEmpty)
+                                                ? Text(
+                                                  "Country: $countryName",
+                                                  style: TextStyle(
+                                                    color: Colors.white
+                                                        .withOpacity(0.7),
+                                                  ),
+                                                )
+                                                : null,
                                       ),
-                                    ),
-                                  ),
+                                    );
+                                  }),
                                 ],
                               );
                             } else if (sState is StatesError) {

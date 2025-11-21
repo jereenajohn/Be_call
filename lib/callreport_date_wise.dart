@@ -34,6 +34,11 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
     return prefs.getString('token');
   }
 
+  Future<int?> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('id');
+  }
+
   int parseDuration(String duration) {
     int totalSeconds = 0;
     final minMatch = RegExp(r'(\d+)\s*min').firstMatch(duration);
@@ -66,19 +71,28 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
     try {
       // ✅ If your backend supports date-range:
       var res = await http.get(
-        Uri.parse("$api/api/call/report/date-range/?from=$fromStr&to=$toStr"),
+        Uri.parse(
+          "$api/api/call/report/staff/date-range?from=$fromStr&to=$toStr",
+        ),
         headers: {"Authorization": "Bearer $token"},
       );
-    
+
+      int? userId = await getUserId();
 
       // ✅ Fallback to single date
       if (res.statusCode != 200) {
         res = await http.get(
-          Uri.parse("$api/api/call/report/date/$fromStr/"),
-          headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
+          Uri.parse(
+            "$api/api/call/report/staff/$userId/?from=$fromStr&to=$toStr",
+          ),
+          headers: {
+            "Authorization": "Bearer $token",
+            "Content-Type": "application/json",
+          },
         );
       }
-    
+      print(res.statusCode);
+      print(res.body);
       if (res.statusCode == 200) {
         List<dynamic> data = jsonDecode(res.body);
         Map<String, Map<String, dynamic>> grouped = {};

@@ -102,7 +102,6 @@ class _SettingsPageState extends State<SettingsPage> {
         headers: {"Authorization": "Bearer $token"},
       );
 
-  
       if (response.statusCode == 200) {
         final jsonBody = jsonDecode(response.body);
         setState(() {
@@ -129,10 +128,7 @@ class _SettingsPageState extends State<SettingsPage> {
         },
         body: jsonEncode({"name": newName}),
       );
-
-     
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   String? _editedName;
@@ -267,8 +263,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
 
-                
-
                 const SizedBox(height: 40),
 
                 // Settings List
@@ -279,48 +273,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   child: Column(
                     children: [
-
-                      _settingsTile(
-                        icon: Icons.summarize,
-                        label: 'Survey',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const Survay(),
-                            ),
-                          );
-                        },
-                      ),
-                     const Divider(color: Colors.black54, height: 1),
-
-                      _settingsTile(
-                        icon: Icons.report,
-                        label: 'datewise Call Report',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CallreportDateWise(),
-                            ),
-                          );
-                        },
-                      ),
-                      const Divider(color: Colors.black54, height: 1),
-                      _settingsTile(
-                        icon: Icons.report,
-                        label: 'state wise Call Report',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const CallreportStatewise(),
-                            ),
-                          );
-                        },
-                      ),
-                      const Divider(color: Colors.black54, height: 1),
-
                       _settingsTile(
                         icon: Icons.person_2,
                         label: 'Contacts',
@@ -328,7 +280,9 @@ class _SettingsPageState extends State<SettingsPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const ContactsListPage(),
+                              builder:
+                                  (_) =>
+                                      const AddContactFormPage(phoneNumber: ''),
                             ),
                           );
                         },
@@ -369,15 +323,37 @@ class _SettingsPageState extends State<SettingsPage> {
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => AddDistric(),
-                            ),
+                            MaterialPageRoute(builder: (_) => AddDistric()),
                           );
                         },
                       ),
 
-                        const Divider(color: Colors.black54, height: 1),
+                      const Divider(color: Colors.black54, height: 1),
+                      _settingsTile(
+                        icon: Icons.location_city,
+                        label: 'Countries',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AddContryFormPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(color: Colors.black54, height: 1),
 
+                      _settingsTile(
+                        icon: Icons.summarize,
+                        label: 'Survey',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const Survay()),
+                          );
+                        },
+                      ),
+                      const Divider(color: Colors.black54, height: 1),
                       _settingsTile(
                         icon: Icons.report,
                         label: 'product report',
@@ -391,17 +367,29 @@ class _SettingsPageState extends State<SettingsPage> {
                         },
                       ),
 
-
                       const Divider(color: Colors.black54, height: 1),
 
                       _settingsTile(
-                        icon: Icons.location_city,
-                        label: 'Countries',
+                        icon: Icons.report,
+                        label: 'datewise Call Report',
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const AddContryFormPage(),
+                              builder: (_) => const CallreportDateWise(),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(color: Colors.black54, height: 1),
+                      _settingsTile(
+                        icon: Icons.report,
+                        label: 'state wise Call Report',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CallreportStatewise(),
                             ),
                           );
                         },
