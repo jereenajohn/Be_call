@@ -1,4 +1,4 @@
-package com.be_call_app.app
+package com.bepositive_becall.app
 
 import io.flutter.embedding.android.FlutterActivity
 

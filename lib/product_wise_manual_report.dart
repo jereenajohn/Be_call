@@ -136,7 +136,6 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
         });
       }
     } catch (error) {
-      print('Error fetching customers: $error');
     }
   }
 
@@ -160,7 +159,6 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
             )
             .toList();
 
-    print("products: $products");
 
     final body = jsonEncode({
       'customer': selectedCustomer,
@@ -177,8 +175,7 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
       body: body,
     );
 
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
+   
 
     if (response.statusCode == 201) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -203,7 +200,6 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
       // Handle error
     }
   } }catch (error) {
-    print('Error submitting report: $error');
   }
 }
 
@@ -540,8 +536,7 @@ class _ProductWiseManualReportState extends State<ProductWiseManualReport> {
                   minimumSize: const Size(double.infinity, 40),
                 ),
                 onPressed: () {
-                  print("Customer: $selectedCustomer");
-                  print("Rows: $productRows");
+                 
                   submitReport();
                 },
                 child: const Text(

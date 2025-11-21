@@ -69,8 +69,7 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
         Uri.parse("$api/api/call/report/date-range/?from=$fromStr&to=$toStr"),
         headers: {"Authorization": "Bearer $token"},
       );
-      print(res.statusCode);
-      print(res.body);
+    
 
       // ✅ Fallback to single date
       if (res.statusCode != 200) {
@@ -79,9 +78,7 @@ class _CallreportDateWiseState extends State<CallreportDateWise> {
           headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
         );
       }
-      print(res.statusCode);
-      print(" res.body");
-      print("res.bodyyyyyyyyyyyy${res.body}");
+    
       if (res.statusCode == 200) {
         List<dynamic> data = jsonDecode(res.body);
         Map<String, Map<String, dynamic>> grouped = {};

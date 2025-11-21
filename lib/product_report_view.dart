@@ -55,8 +55,7 @@ class _ProductReportViewState extends State<ProductReportView> {
         },
       );
 
-      print('Response status customerrrrr: ${response.statusCode}');
-      print('Response body: ${response.body}');
+     
 
       if (response.statusCode == 200) {
         final List<dynamic> parsed = jsonDecode(response.body);
@@ -73,11 +72,9 @@ class _ProductReportViewState extends State<ProductReportView> {
 
         setState(() {
           customer = managerlist;
-          print('Customers: $customer');
         });
       }
     } catch (error) {
-      print('Error fetching customers: $error');
     }
   }
 
@@ -105,10 +102,8 @@ class _ProductReportViewState extends State<ProductReportView> {
         setState(() {
           categoryList = tempList;
         });
-        print('Categories: $categoryList');
       }
     } catch (error) {
-      print('Error fetching categories: $error');
     }
   }
 
@@ -124,8 +119,7 @@ class _ProductReportViewState extends State<ProductReportView> {
           'Content-Type': 'application/json',
         },
       );
-      print('Response status product report: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    
       if (response.statusCode == 200) {
         final parsed = jsonDecode(response.body);
         setState(() {
@@ -133,7 +127,6 @@ class _ProductReportViewState extends State<ProductReportView> {
         });
       }
     } catch (e) {
-      print(e);
     }
   }
 
@@ -157,8 +150,7 @@ class _ProductReportViewState extends State<ProductReportView> {
         },
       );
 
-      print('Response status staff: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    
 
       if (response.statusCode == 200) {
         final parsed = jsonDecode(response.body);
@@ -168,7 +160,6 @@ class _ProductReportViewState extends State<ProductReportView> {
         setState(() {});
       }
     } catch (error) {
-      print(error);
     }
   }
 
@@ -697,7 +688,7 @@ totalQtyCell.cellStyle = grandTotal > 0 ? greenTotalStyle : redBodyStyle;
           ),
         ),
         title: const Text(
-          "Product Report View",
+          "Product Report",
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -874,7 +865,7 @@ totalQtyCell.cellStyle = grandTotal > 0 ? greenTotalStyle : redBodyStyle;
                               ? () => generateStateProductExcel()
                               : null,
                       child: const Text(
-                        "State Product Report",
+                        "State Wise Report",
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
@@ -897,7 +888,7 @@ totalQtyCell.cellStyle = grandTotal > 0 ? greenTotalStyle : redBodyStyle;
                       ),
                       onPressed: generateCustomerProductExcel,
                       child: const Text(
-                        "Customer Product Report",
+                        "Customer Wise Report",
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
