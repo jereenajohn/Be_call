@@ -31,6 +31,13 @@ class _StatewiseState extends State<Statewise> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
+Future<int?> getUserId() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  var idValue = prefs.get('id');
+  if (idValue is int) return idValue;
+  if (idValue is String) return int.tryParse(idValue);
+  return null;
+}
 
   Future<void> _resolveStateIdAndFetch() async {
     try {
@@ -62,36 +69,46 @@ class _StatewiseState extends State<Statewise> {
     }
   }
 
-  Future<void> _fetchCustomers(int stateId) async {
-    final token = await getToken();
-    try {
-      final response = await http.get(
-        Uri.parse("$api/api/call/report/state/$stateId/"),
-        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
-      );
+ Future<void> _fetchCustomers(int stateId) async {
+  final token = await getToken();
+  final userId = await getUserId();   // logged-in staff ID
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+  try {
+    final response = await http.get(
+      Uri.parse("$api/api/call/report/state/$stateId/"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
 
-        // Sort by date (latest first)
-        data.sort((a, b) {
-          final da = DateTime.tryParse(a['date'] ?? '') ?? DateTime(1900);
-          final db = DateTime.tryParse(b['date'] ?? '') ?? DateTime(1900);
-          return db.compareTo(da);
-        });
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
 
-        setState(() {
-          _allCustomers = data;
-          _applyDateFilter(); // Filter today's data initially
-          _loading = false;
-        });
-      } else {
-        setState(() => _loading = false);
-      }
-    } catch (e) {
+      // FILTER ONLY LOGGEDIN STAFF'S CALLS
+      final filteredByUser = data.where((c) {
+        return c['created_by'] == userId;
+      }).toList();
+
+      // Sort by date (latest first)
+      filteredByUser.sort((a, b) {
+        final da = DateTime.tryParse(a['date'] ?? '') ?? DateTime(1900);
+        final db = DateTime.tryParse(b['date'] ?? '') ?? DateTime(1900);
+        return db.compareTo(da);
+      });
+
+      setState(() {
+        _allCustomers = filteredByUser;
+        _applyDateFilter();
+        _loading = false;
+      });
+    } else {
       setState(() => _loading = false);
     }
+  } catch (e) {
+    setState(() => _loading = false);
   }
+}
 
   void _applyDateFilter() {
     final now = DateTime.now();
