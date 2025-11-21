@@ -15,7 +15,7 @@ if (keystoreFile.exists()) {
 }
 
 android {
-    namespace = "com.be_call_app.app"
+    namespace = "com.bepositive_becall.app"
     compileSdk = flutter.compileSdkVersion
 
     ndkVersion = "27.0.12077973"
@@ -31,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.be_call_app.app"
+        applicationId = "com.bepositive_becall.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

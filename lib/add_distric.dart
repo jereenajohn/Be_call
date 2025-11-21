@@ -89,7 +89,6 @@ Future<void> _fetchStates() async {
           'Content-Type': 'application/json',
         },
       );
-print(response.body);
       if (response.statusCode == 200) {
         final parsed = jsonDecode(response.body);
         final dataList = parsed['data'] as List;
@@ -106,7 +105,6 @@ print(response.body);
         });
       }
     } catch (error) {
-      debugPrint('Error fetching questions: $error');
     }
   }
  
@@ -137,8 +135,7 @@ print(response.body);
           'name': questionController.text.trim(),
         }),
       );
-print(response.body);
-print(response.statusCode);
+
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -158,7 +155,6 @@ print(response.statusCode);
         );
       }
     } catch (e) {
-      debugPrint('Error submitting District: $e');
     } finally {
       setState(() => isLoading = false);
     }

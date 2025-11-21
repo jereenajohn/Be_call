@@ -61,7 +61,10 @@ class _CallReportState extends State<CallReport> {
 
       final activeResponse = await http.get(
         Uri.parse('$api/api/call/report/staff/$userId/'),
-        headers: {'Authorization': 'Bearer $token',"Content-Type": "application/json",},
+        headers: {
+          'Authorization': 'Bearer $token',
+          "Content-Type": "application/json",
+        },
       );
 
       final productiveResponse = await http.get(
@@ -69,15 +72,11 @@ class _CallReportState extends State<CallReport> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      print("Active Response Code: ${activeResponse.statusCode}");
-      print("Active Response Body: ${activeResponse.body}");
-
       if (activeResponse.statusCode == 200 &&
           productiveResponse.statusCode == 200) {
         final activeData = json.decode(activeResponse.body);
         final productiveData = json.decode(productiveResponse.body);
 
-        // Determine date range
         DateTime today = DateTime.now();
         DateTime start =
             range?.start ?? DateTime(today.year, today.month, today.day);
@@ -91,25 +90,22 @@ class _CallReportState extends State<CallReport> {
             DateTime callDate = DateTime(date.year, date.month, date.day);
             DateTime startDate = DateTime(start.year, start.month, start.day);
             DateTime endDate = DateTime(end.year, end.month, end.day);
-            return !callDate.isBefore(startDate) && !callDate.isAfter(endDate);
+            return !callDate.isBefore(startDate) &&
+                !callDate.isAfter(endDate);
           } catch (e) {
             return false;
           }
         }
 
-        // ✅ Filter only "Active" calls
-        var filteredActive =
-            activeData.where((call) {
-              final status = call['status']?.toString().toLowerCase();
-              return status == 'active' &&
-                  isWithinRange(call['date'] ?? call['created_at']);
-            }).toList();
+        var filteredActive = activeData.where((call) {
+          final status = call['status']?.toString().toLowerCase();
+          return status == 'active' &&
+              isWithinRange(call['date'] ?? call['created_at']);
+        }).toList();
 
-        // ✅ Keep productive filtering same
-        var filteredProductive =
-            productiveData.where((call) {
-              return isWithinRange(call['date'] ?? call['created_at']);
-            }).toList();
+        var filteredProductive = productiveData.where((call) {
+          return isWithinRange(call['date'] ?? call['created_at']);
+        }).toList();
 
         setState(() {
           activeCalls = filteredActive;
@@ -124,7 +120,6 @@ class _CallReportState extends State<CallReport> {
         });
       }
     } catch (e) {
-      debugPrint('Error fetching call reports: $e');
       setState(() => isLoading = false);
     }
   }
@@ -134,11 +129,13 @@ class _CallReportState extends State<CallReport> {
     try {
       var response = await https.put(
         Uri.parse("$api/api/call/report/$id/"),
-        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
         body: {'note': note},
       );
-      print(response.statusCode);
-      print(response.body);
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -162,230 +159,218 @@ class _CallReportState extends State<CallReport> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child:
-            isLoading
-                ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                )
-                : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Call Report',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Call Report',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 10),
+                    ),
+                    const SizedBox(height: 10),
 
-                      // User Info
-                      if (userDetails != null)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.teal,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Logged in as: ${userDetails!['username'] ?? 'Unknown'}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              if (userDetails!['email'] != null)
-                                Text(
-                                  'Email: ${userDetails!['email']}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              selectedRange == null
-                                  ? 'Showing: Today'
-                                  : 'From: ${selectedRange!.start.toString().split(" ")[0]}  →  To: ${selectedRange!.end.toString().split(" ")[0]}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(
-                                255,
-                                26,
-                                164,
-                                143,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onPressed: () async {
-                              final DateTime now = DateTime.now();
-                              final picked = await showDateRangePicker(
-                                context: context,
-                                firstDate: DateTime(now.year - 1),
-                                lastDate: DateTime(now.year + 1),
-                                initialDateRange:
-                                    selectedRange ??
-                                    DateTimeRange(
-                                      start: DateTime(
-                                        now.year,
-                                        now.month,
-                                        now.day,
-                                      ),
-                                      end: DateTime(
-                                        now.year,
-                                        now.month,
-                                        now.day,
-                                      ),
-                                    ),
-                              );
-
-                              if (picked != null) {
-                                setState(() {
-                                  selectedRange = picked;
-                                  isLoading = true;
-                                });
-                                await fetchCallReports(range: picked);
-                              }
-                            },
-                            icon: const Icon(
-                              Icons.calendar_month,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            label: const Text(
-                              'Select Dates',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
+                    if (userDetails != null)
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 26, 164, 143),
-                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.teal,
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Call Summary',
-                              style: TextStyle(
+                            Text(
+                              'Logged in as: ${userDetails!['username'] ?? 'Unknown'}',
+                              style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Total Calls:',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
+                            if (userDetails!['email'] != null)
+                              Text(
+                                'Email: ${userDetails!['email']}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
                                 ),
-                                Text(
-                                  '${productiveCalls.length}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Total Call Duration:',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  getTotalDuration(productiveCalls),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
-                      // 📅 Date Range Selector
-                      _expandableTable(
-                        title: 'Active Calls',
-                        data:
-                            activeCalls.where((call) {
-                              final d =
-                                  call['duration']
-                                      ?.toString()
-                                      .trim()
-                                      .toLowerCase() ??
-                                  '';
-                              if (d.isEmpty) return false;
-                              if (d == '0' ||
-                                  d == '0 sec' ||
-                                  d == '0s' ||
-                                  d == '00:00' ||
-                                  d == '00:00:00')
-                                return false;
-                              return true;
-                            }).toList(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedRange == null
+                                ? 'Showing: Today'
+                                : 'From: ${selectedRange!.start.toString().split(" ")[0]}  →  To: ${selectedRange!.end.toString().split(" ")[0]}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 26, 164, 143),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () async {
+                            final DateTime now = DateTime.now();
+                            final picked = await showDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(now.year - 1),
+                              lastDate: DateTime(now.year + 1),
+                              initialDateRange: selectedRange ??
+                                  DateTimeRange(
+                                    start: DateTime(
+                                        now.year, now.month, now.day),
+                                    end: DateTime(
+                                        now.year, now.month, now.day),
+                                  ),
+                            );
+
+                            if (picked != null) {
+                              setState(() {
+                                selectedRange = picked;
+                                isLoading = true;
+                              });
+                              await fetchCallReports(range: picked);
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.calendar_month,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          label: const Text(
+                            'Select Dates',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 26, 164, 143),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      const SizedBox(height: 16),
-                      _expandableTable(
-                        title: 'Productive Calls',
-                        data:
-                            productiveCalls
-                                .where(
-                                  (call) =>
-                                      call['invoice'] != null &&
-                                      call['invoice_number']
-                                          .toString()
-                                          .isNotEmpty,
-                                )
-                                .toList(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Call Summary',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total Calls:',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                '${productiveCalls.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total Call Duration:',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                getTotalDuration(productiveCalls),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _expandableTable(
+                      title: 'Active Calls',
+                      data: activeCalls.where((call) {
+                        final d = call['duration']
+                                ?.toString()
+                                .trim()
+                                .toLowerCase() ??
+                            '';
+                        if (d.isEmpty) return false;
+                        if (d == '0' ||
+                            d == '0 sec' ||
+                            d == '0s' ||
+                            d == '00:00' ||
+                            d == '00:00:00') return false;
+                        return true;
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _expandableTable(
+                      title: 'Productive Calls',
+                      data: productiveCalls
+                          .where((call) =>
+                              call['invoice'] != null &&
+                              call['invoice_number']
+                                  .toString()
+                                  .isNotEmpty)
+                          .toList(),
+                    ),
+                  ],
                 ),
+              ),
       ),
     );
   }
@@ -396,7 +381,6 @@ class _CallReportState extends State<CallReport> {
   }) {
     final isProductive = title == 'Productive Calls';
 
-    // ✅ Local helper function for total duration
     String getTotalDuration() {
       int totalSeconds = 0;
 
@@ -406,12 +390,15 @@ class _CallReportState extends State<CallReport> {
 
         String durationStr = duration.toString().trim().toLowerCase();
 
-        if (durationStr.contains('min') || durationStr.contains('sec')) {
+        if (durationStr.contains('min') ||
+            durationStr.contains('sec')) {
           int minutes = 0;
           int seconds = 0;
 
-          final minMatch = RegExp(r'(\d+)\s*min').firstMatch(durationStr);
-          final secMatch = RegExp(r'(\d+)\s*sec').firstMatch(durationStr);
+          final minMatch =
+              RegExp(r'(\d+)\s*min').firstMatch(durationStr);
+          final secMatch =
+              RegExp(r'(\d+)\s*sec').firstMatch(durationStr);
 
           if (minMatch != null) minutes = int.parse(minMatch.group(1)!);
           if (secMatch != null) seconds = int.parse(secMatch.group(1)!);
@@ -423,7 +410,8 @@ class _CallReportState extends State<CallReport> {
         final parts =
             durationStr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
         if (parts.length == 3) {
-          totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
+          totalSeconds +=
+              parts[0] * 3600 + parts[1] * 60 + parts[2];
         } else if (parts.length == 2) {
           totalSeconds += parts[0] * 60 + parts[1];
         } else if (parts.length == 1) {
@@ -440,7 +428,6 @@ class _CallReportState extends State<CallReport> {
           '${seconds.toString().padLeft(2, '0')}';
     }
 
-    // ✅ Local helper function for total amount
     String getTotalAmount() {
       double total = data.fold<double>(0, (sum, call) {
         final amount = call['amount'];
@@ -453,16 +440,18 @@ class _CallReportState extends State<CallReport> {
       return total.toStringAsFixed(2);
     }
 
-    // ✅ Rest of your table widget (with Add Note button)
     return Container(
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 26, 164, 143),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          tilePadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           collapsedIconColor: Colors.white,
           iconColor: Colors.white,
           title: Row(
@@ -470,7 +459,8 @@ class _CallReportState extends State<CallReport> {
             children: [
               Text(
                 title,
-                style: const TextStyle(color: Colors.white, fontSize: 18),
+                style:
+                    const TextStyle(color: Colors.white, fontSize: 18),
               ),
               Text(
                 '${data.length}',
@@ -488,440 +478,375 @@ class _CallReportState extends State<CallReport> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
-                  headingRowColor: MaterialStateProperty.all(
-                    const Color(0xFF00695C),
-                  ),
-                  border: TableBorder.all(color: Colors.white, width: 1),
-                  columns:
+                  headingRowColor:
+                      MaterialStateProperty.all(const Color(0xFF00695C)),
+                  border:
+                      TableBorder.all(color: Colors.white, width: 1),
+                  columns: isProductive
+                      ? const [
+                          DataColumn(
+                            label: Text(
+                              'No.',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Invoice',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Amount',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
+                          ),
+                        ]
+                      : const [
+                          DataColumn(
+                            label: Text(
+                              'No.',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Customer',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Add Note',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Duration',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
+                          ),
+                        ],
+                  rows: data.isNotEmpty
+                      ? data.asMap().entries.map((entry) {
+                          final index = entry.key + 1;
+                          final call = entry.value;
+
+                          if (isProductive) {
+                            return DataRow(
+                              cells: [
+                                DataCell(Text(
+                                  '$index',
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 10),
+                                )),
+                                DataCell(Text(
+                                  call['invoice']?.toString() ?? 'N/A',
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 10),
+                                )),
+                                DataCell(Text(
+                                  call['amount']?.toString() ?? 'N/A',
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 10),
+                                )),
+                              ],
+                            );
+                          }
+
+                          return DataRow(
+                            cells: [
+                              DataCell(Text(
+                                '$index',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 10),
+                              )),
+                              DataCell(Text(
+                                call['customer_name'] ?? 'N/A',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 10),
+                              )),
+                              DataCell(
+                                (call['note'] != null &&
+                                        call['note']
+                                            .toString()
+                                            .trim()
+                                            .isNotEmpty)
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 4),
+                                        constraints:
+                                            const BoxConstraints(
+                                              maxWidth: 120,
+                                            ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black26,
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          border: Border.all(
+                                              color: Colors.white30),
+                                        ),
+                                        child: Text(
+                                          call['note'],
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              overflow:
+                                                  TextOverflow.ellipsis),
+                                          maxLines: 2,
+                                        ),
+                                      )
+                                    : ElevatedButton(
+                                        style:
+                                            ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              Colors.blueAccent,
+                                          shape:
+                                              RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(
+                                                    8),
+                                          ),
+                                          padding: const EdgeInsets
+                                              .symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4),
+                                          textStyle: const TextStyle(
+                                              fontSize: 10),
+                                        ),
+                                        onPressed: () async {
+                                          final noteController =
+                                              TextEditingController();
+                                          await showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return AlertDialog(
+                                                backgroundColor:
+                                                    Colors.black87,
+                                                shape:
+                                                    RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius
+                                                          .circular(12),
+                                                ),
+                                                title: const Text(
+                                                  "Add Note",
+                                                  style: TextStyle(
+                                                      color:
+                                                          Colors.white),
+                                                ),
+                                                content: TextField(
+                                                  controller:
+                                                      noteController,
+                                                  style:
+                                                      const TextStyle(
+                                                          color: Colors
+                                                              .white),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                    hintText:
+                                                        "Enter your note here",
+                                                    hintStyle: TextStyle(
+                                                        color: Colors
+                                                            .white54),
+                                                    enabledBorder:
+                                                        UnderlineInputBorder(
+                                                      borderSide: BorderSide(
+                                                          color: Colors
+                                                              .white24),
+                                                    ),
+                                                    focusedBorder:
+                                                        UnderlineInputBorder(
+                                                      borderSide: BorderSide(
+                                                          color: Colors
+                                                              .tealAccent),
+                                                    ),
+                                                  ),
+                                                  maxLines: 3,
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    child: const Text(
+                                                      "Cancel",
+                                                      style: TextStyle(
+                                                          color: Colors
+                                                              .white54),
+                                                    ),
+                                                    onPressed: () =>
+                                                        Navigator.pop(
+                                                            context),
+                                                  ),
+                                                  ElevatedButton(
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors
+                                                              .teal,
+                                                    ),
+                                                    onPressed: () {
+                                                      final note =
+                                                          noteController
+                                                              .text
+                                                              .trim();
+                                                      if (note.isEmpty)
+                                                        return;
+                                                      savenote(
+                                                          call['id'],
+                                                          note);
+                                                      Navigator.pop(
+                                                          context);
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                              'Note added: $note'),
+                                                          backgroundColor:
+                                                              Colors
+                                                                  .green,
+                                                        ),
+                                                      );
+                                                      setState(() {
+                                                        call['note'] =
+                                                            note;
+                                                      });
+                                                    },
+                                                    child:
+                                                        const Text("Save"),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
+                                        child:
+                                            const Text("Add Note"),
+                                      ),
+                              ),
+                              DataCell(
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 60,
+                                      child: Text(
+                                        call['duration'] ?? 'N/A',
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10),
+                                        overflow:
+                                            TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                CallDetailPage(
+                                                    call: call),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList()
+                      :
+                      // FIXED FALLBACK ROWS
                       isProductive
                           ? const [
-                            DataColumn(
-                              label: Text(
-                                'No.',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Invoice',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Amount',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                          ]
-                          : const [
-                            DataColumn(
-                              label: Text(
-                                'No.',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Customer',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Add Note',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                            DataColumn(
-                              label: Text(
-                                'Duration',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                          ],
-                  rows:
-                      data.isNotEmpty
-                          ? data.asMap().entries.map((entry) {
-                            final index = entry.key + 1;
-                            final call = entry.value;
-                            return DataRow(
-                              cells:
-                                  isProductive
-                                      ? [
-                                        DataCell(
-                                          Text(
-                                            '$index',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            call['invoice']?.toString() ??
-                                                'N/A',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                call['amount']?.toString() ??
-                                                    'N/A',
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 10,
-                                                ),
-                                              ),
-                                              if (!isProductive)
-                                                IconButton(
-                                                  icon: const Icon(
-                                                    Icons.arrow_forward_ios,
-                                                    color: Colors.white,
-                                                    size: 16,
-                                                  ),
-                                                  onPressed: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder:
-                                                            (context) =>
-                                                                CallDetailPage(
-                                                                  call: call,
-                                                                ),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ]
-                                      : [
-                                        DataCell(
-                                          Text(
-                                            '$index',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          Text(
-                                            call['customer_name'] ?? 'N/A',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ),
-                                        DataCell(
-                                          (call['note'] != null &&
-                                                  call['note']
-                                                      .toString()
-                                                      .trim()
-                                                      .isNotEmpty)
-                                              ? Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 6,
-                                                      vertical: 4,
-                                                    ),
-                                                constraints:
-                                                    const BoxConstraints(
-                                                      maxWidth: 120,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black26,
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  border: Border.all(
-                                                    color: Colors.white30,
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  call['note'],
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 10,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                  maxLines: 2,
-                                                ),
-                                              )
-                                              : ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      Colors.blueAccent,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4,
-                                                      ),
-                                                  textStyle: const TextStyle(
-                                                    fontSize: 10,
-                                                  ),
-                                                ),
-                                                onPressed: () async {
-                                                  final noteController =
-                                                      TextEditingController();
-                                                  await showDialog(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return AlertDialog(
-                                                        backgroundColor:
-                                                            Colors.black87,
-                                                        shape: RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                12,
-                                                              ),
-                                                        ),
-                                                        title: const Text(
-                                                          "Add Note",
-                                                          style: TextStyle(
-                                                            color: Colors.white,
-                                                          ),
-                                                        ),
-                                                        content: TextField(
-                                                          controller:
-                                                              noteController,
-                                                          style:
-                                                              const TextStyle(
-                                                                color:
-                                                                    Colors
-                                                                        .white,
-                                                              ),
-                                                          decoration: const InputDecoration(
-                                                            hintText:
-                                                                "Enter your note here",
-                                                            hintStyle: TextStyle(
-                                                              color:
-                                                                  Colors
-                                                                      .white54,
-                                                            ),
-                                                            enabledBorder:
-                                                                UnderlineInputBorder(
-                                                                  borderSide:
-                                                                      BorderSide(
-                                                                        color:
-                                                                            Colors.white24,
-                                                                      ),
-                                                                ),
-                                                            focusedBorder:
-                                                                UnderlineInputBorder(
-                                                                  borderSide:
-                                                                      BorderSide(
-                                                                        color:
-                                                                            Colors.tealAccent,
-                                                                      ),
-                                                                ),
-                                                          ),
-                                                          maxLines: 3,
-                                                        ),
-                                                        actions: [
-                                                          TextButton(
-                                                            child: const Text(
-                                                              "Cancel",
-                                                              style: TextStyle(
-                                                                color:
-                                                                    Colors
-                                                                        .white54,
-                                                              ),
-                                                            ),
-                                                            onPressed:
-                                                                () =>
-                                                                    Navigator.pop(
-                                                                      context,
-                                                                    ),
-                                                          ),
-                                                          ElevatedButton(
-                                                            style:
-                                                                ElevatedButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .teal,
-                                                                ),
-                                                            onPressed: () {
-                                                              final note =
-                                                                  noteController
-                                                                      .text
-                                                                      .trim();
-                                                              if (note.isEmpty)
-                                                                return;
-                                                              savenote(
-                                                                call['id'],
-                                                                note,
-                                                              );
-                                                              Navigator.pop(
-                                                                context,
-                                                              );
-                                                              ScaffoldMessenger.of(
-                                                                context,
-                                                              ).showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                    'Note added: $note',
-                                                                  ),
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .green,
-                                                                ),
-                                                              );
-                                                              setState(() {
-                                                                call['note'] =
-                                                                    note; // update UI immediately
-                                                              });
-                                                            },
-                                                            child: const Text(
-                                                              "Save",
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                child: const Text("Add Note"),
-                                              ),
-                                        ),
-
-                                        DataCell(
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SizedBox(
-                                                width: 60,
-                                                child: Text(
-                                                  call['duration'] ?? 'N/A',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 10,
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(
-                                                  Icons.arrow_forward_ios,
-                                                  color: Colors.white,
-                                                  size: 16,
-                                                ),
-                                                onPressed: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder:
-                                                          (context) =>
-                                                              CallDetailPage(
-                                                                call: call,
-                                                              ),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                            );
-                          }).toList()
-                          : [
-                            const DataRow(
-                              cells: [
-                                DataCell(
-                                  Text(
+                              DataRow(
+                                cells: [
+                                  DataCell(Text(
                                     '-',
                                     style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
+                                  )),
+                                  DataCell(Text(
                                     'No Calls',
                                     style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
+                                  )),
+                                  DataCell(Text(
                                     '-',
                                     style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
+                                  )),
+                                ],
+                              ),
+                            ]
+                          : const [
+                              DataRow(
+                                cells: [
+                                  DataCell(Text(
                                     '-',
                                     style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                  )),
+                                  DataCell(Text(
+                                    'No Calls',
+                                    style: TextStyle(color: Colors.white),
+                                  )),
+                                  DataCell(Text(
+                                    '-',
+                                    style: TextStyle(color: Colors.white),
+                                  )),
+                                  DataCell(Text(
+                                    '-',
+                                    style: TextStyle(color: Colors.white),
+                                  )),
+                                ],
+                              ),
+                            ],
                 ),
               ),
             ),
+
             Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+              padding:
+                  const EdgeInsets.only(left: 16, right: 16, bottom: 12),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ✅ Always show total duration
                     Text(
                       'Total Duration: ${getTotalDuration()}',
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15),
                     ),
                     const SizedBox(height: 4),
-
-                    // ✅ If it's Productive Calls, also show total amount
                     if (isProductive)
                       Text(
                         'Total Amount: ₹${getTotalAmount()}',
@@ -954,8 +879,10 @@ class _CallReportState extends State<CallReport> {
         int minutes = 0;
         int seconds = 0;
 
-        final minMatch = RegExp(r'(\d+)\s*min').firstMatch(durationStr);
-        final secMatch = RegExp(r'(\d+)\s*sec').firstMatch(durationStr);
+        final minMatch =
+            RegExp(r'(\d+)\s*min').firstMatch(durationStr);
+        final secMatch =
+            RegExp(r'(\d+)\s*sec').firstMatch(durationStr);
 
         if (minMatch != null) minutes = int.parse(minMatch.group(1)!);
         if (secMatch != null) seconds = int.parse(secMatch.group(1)!);
@@ -967,7 +894,8 @@ class _CallReportState extends State<CallReport> {
       final parts =
           durationStr.split(':').map((e) => int.tryParse(e) ?? 0).toList();
       if (parts.length == 3) {
-        totalSeconds += parts[0] * 3600 + parts[1] * 60 + parts[2];
+        totalSeconds +=
+            parts[0] * 3600 + parts[1] * 60 + parts[2];
       } else if (parts.length == 2) {
         totalSeconds += parts[0] * 60 + parts[1];
       } else if (parts.length == 1) {

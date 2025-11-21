@@ -75,7 +75,6 @@ class _UpdateContactPageState extends State<UpdateContactPage> {
           'Content-Type': 'application/json',
         },
       );
-print(response.body);
       if (response.statusCode == 200) {
         final parsed = jsonDecode(response.body);
         final dataList = parsed['data'] as List;
@@ -92,7 +91,6 @@ print(response.body);
         });
       }
     } catch (error) {
-      debugPrint('Error fetching questions: $error');
     }
   }
  

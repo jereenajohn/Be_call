@@ -59,7 +59,6 @@ class _LoginPageState extends State<LoginPage> {
       //     ],
       //   ),
       // );
-      print("LOGIN RESPONSE: ${response.body}");
 
       if (response.statusCode == 200) {
         var responseData = jsonDecode(response.body);
@@ -76,7 +75,6 @@ class _LoginPageState extends State<LoginPage> {
             utf8.decode(base64.decode(payload)),
           );
 
-          print("PAYLOAD MAP: $payloadMap");
 
           var userId = payloadMap['id'];
           var userRole = payloadMap['active'];
@@ -114,7 +112,6 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } catch (e) {
-      print("LOGIN ERROR: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Error connecting to server")),
       );

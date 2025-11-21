@@ -63,8 +63,7 @@ class _UpdateDistrictState extends State<UpdateDistrict> {
           'Content-Type': 'application/json',
         },
       );
-print(response.body);
-print(response.statusCode);
+
       if (response.statusCode == 200) {
         final parsed = jsonDecode(response.body);
         final data = parsed['data'] as Map<String, dynamic>;
@@ -76,7 +75,6 @@ print(response.statusCode);
 
       }
     } catch (error) {
-      debugPrint('Error fetching questions: $error');
     }
   }
 Future<void> _fetchStates() async {
@@ -117,7 +115,6 @@ Future<void> _fetchStates() async {
           'Content-Type': 'application/json',
         },
       );
-print(response.body);
       if (response.statusCode == 200) {
         final parsed = jsonDecode(response.body);
         final dataList = parsed['data'] as List;
@@ -134,7 +131,6 @@ print(response.body);
         });
       }
     } catch (error) {
-      debugPrint('Error fetching questions: $error');
     }
   }
 
@@ -165,8 +161,7 @@ print(response.body);
           'name': questionController.text.trim(),
         }),
       );
-print(response.body);
-print(response.statusCode);
+
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -186,7 +181,6 @@ print(response.statusCode);
         );
       }
     } catch (e) {
-      debugPrint('Error submitting District: $e');
     } finally {
       setState(() => isLoading = false);
     }

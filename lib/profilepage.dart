@@ -281,7 +281,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
 
                       _settingsTile(
-                        icon: Icons.person_2,
+                        icon: Icons.summarize,
                         label: 'Survey',
                         onTap: () {
                           Navigator.push(
@@ -295,7 +295,7 @@ class _SettingsPageState extends State<SettingsPage> {
                      const Divider(color: Colors.black54, height: 1),
 
                       _settingsTile(
-                        icon: Icons.person_2,
+                        icon: Icons.report,
                         label: 'datewise Call Report',
                         onTap: () {
                           Navigator.push(
@@ -308,7 +308,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const Divider(color: Colors.black54, height: 1),
                       _settingsTile(
-                        icon: Icons.person_2,
+                        icon: Icons.report,
                         label: 'state wise Call Report',
                         onTap: () {
                           Navigator.push(
@@ -335,7 +335,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const Divider(color: Colors.black54, height: 1),
                       _settingsTile(
-                        icon: Icons.person_2,
+                        icon: Icons.location_city_rounded,
                         label: 'States',
                         onTap: () {
                           Navigator.push(
@@ -364,7 +364,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       const Divider(color: Colors.black54, height: 1),
 
                       _settingsTile(
-                        icon: Icons.star,
+                        icon: Icons.location_city_outlined,
                         label: 'District',
                         onTap: () {
                           Navigator.push(
@@ -379,7 +379,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         const Divider(color: Colors.black54, height: 1),
 
                       _settingsTile(
-                        icon: Icons.star,
+                        icon: Icons.report,
                         label: 'product report',
                         onTap: () {
                           Navigator.push(
@@ -395,7 +395,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       const Divider(color: Colors.black54, height: 1),
 
                       _settingsTile(
-                        icon: Icons.star,
+                        icon: Icons.location_city,
                         label: 'Countries',
                         onTap: () {
                           Navigator.push(
@@ -408,17 +408,17 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const Divider(color: Colors.black54, height: 1),
 
-                      _settingsTile(
-                        icon: Icons.star,
-                        label: 'Stared',
-                        onTap: () {},
-                      ),
-                      const Divider(color: Colors.black54, height: 1),
-                      _settingsTile(
-                        icon: Icons.favorite,
-                        label: 'Favourite',
-                        onTap: () {},
-                      ),
+                      // _settingsTile(
+                      //   icon: Icons.star,
+                      //   label: 'Stared',
+                      //   onTap: () {},
+                      // ),
+                      // const Divider(color: Colors.black54, height: 1),
+                      // _settingsTile(
+                      //   icon: Icons.favorite,
+                      //   label: 'Favourite',
+                      //   onTap: () {},
+                      // ),
                       const Divider(color: Colors.black54, height: 1),
                       _settingsTile(
                         icon: Icons.folder,

@@ -360,7 +360,6 @@ getDateWise();
           }
           else if (value == 'profile') {
             // Example: open profile page
-            print('Profile tapped');
           }
         },
         itemBuilder: (BuildContext context) => [

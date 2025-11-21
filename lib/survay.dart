@@ -45,7 +45,7 @@ class _SurvayState extends State<Survay> {
     try {
       final response = await http.get(
         Uri.parse("$api/api/profile/"),
-        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
+        headers: {"Authorization": "Bearer $token"},
       );
 
       if (response.statusCode == 200) {
@@ -59,11 +59,12 @@ class _SurvayState extends State<Survay> {
   }
 
   Future<void> getCustomers() async {
+    print("🔍 Fetching customers...");
     try {
       final token = await getToken();
 
       var response = await http.get(
-        Uri.parse('$api/api/customers/'),
+        Uri.parse('$api/api/staff/customers/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -93,50 +94,51 @@ print(response.body);
     }
   }
 
-  Future<void> fetchQuestions() async {
-    try {
-      final token = await getToken();
-      if (token == null) return;
+ Future<void> fetchQuestions() async {
+  print("🔍 Fetching questions...");
+  try {
+    final token = await getToken();
+    if (token == null) return;
 
-      final userFamilyId = _user?['family'];
-      final userFamilyName = _user?['family_name'];
+    final userFamilyId = _user?['family'];
+    final userFamilyName = _user?['family_name'];
 
-      final response = await http.get(
-        Uri.parse('$api/api/questionnaires/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
+    final response = await http.get(
+      Uri.parse('$api/api/questionnaires/family/$userFamilyId/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+    print(response.body);
 
-      if (response.statusCode == 200) {
-        final parsed = jsonDecode(response.body);
-        final data = parsed['data'] as List;
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List;  // FIXED
 
-        final filteredQuestions = data.where((q) {
-          return q['family'] == userFamilyId ||
-              q['family_name'] == userFamilyName;
-        }).toList();
+      final filteredQuestions = data.where((q) {
+        return q['family'] == userFamilyId ||
+            q['family_name'] == userFamilyName;
+      }).toList();
 
-        setState(() {
-          questions = filteredQuestions
-              .map((q) => {
-                    'id': q['id'],
-                    'question': q['questions'],
-                    'family': q['family_name'],
-                  })
-              .toList();
-          isLoading = false;
-        });
-      } else {
-        debugPrint("❌ Failed to load questions");
-        setState(() => isLoading = false);
-      }
-    } catch (e) {
-      debugPrint("⚠️ Error fetching questions: $e");
+      setState(() {
+        questions = filteredQuestions
+            .map((q) => {
+                  'id': q['id'],
+                  'question': q['questions'],
+                  'family': q['family_name'],
+                })
+            .toList();
+        isLoading = false;
+      });
+    } else {
+      debugPrint("❌ Failed to load questions");
       setState(() => isLoading = false);
     }
+  } catch (e) {
+    debugPrint("⚠️ Error fetching questions: $e");
+    setState(() => isLoading = false);
   }
+}
 
   Future<void> submitAnswers() async {
     if (answers.isEmpty) {
@@ -378,6 +380,7 @@ Container(
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 10),
                           ],
                         );
                       },

@@ -52,7 +52,6 @@ class _AddQuestionsState extends State<AddQuestions> {
         });
       }
     } catch (error) {
-      debugPrint('Error fetching family: $error');
     }
   }
 
@@ -84,7 +83,6 @@ class _AddQuestionsState extends State<AddQuestions> {
         });
       }
     } catch (error) {
-      debugPrint('Error fetching questions: $error');
     }
   }
 
@@ -135,7 +133,6 @@ class _AddQuestionsState extends State<AddQuestions> {
         );
       }
     } catch (e) {
-      debugPrint('Error submitting question: $e');
     } finally {
       setState(() => isLoading = false);
     }

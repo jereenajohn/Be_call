@@ -62,7 +62,6 @@ class _AddContactFormPageState extends State<AddContactFormPage> {
           'Content-Type': 'application/json',
         },
       );
-print(response.body);
       if (response.statusCode == 200) {
         final parsed = jsonDecode(response.body);
         final dataList = parsed['data'] as List;
@@ -77,10 +76,8 @@ print(response.body);
                   })
               .toList();
         });
-        print(district);
       }
     } catch (error) {
-      debugPrint('Error fetching questions: $error');
     }
   }
   Future<void> _fetchStates() async {

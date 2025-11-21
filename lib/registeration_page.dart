@@ -53,8 +53,7 @@ class _RegisterationPageState extends State<RegisterationPage> {
         }),
       );
 
-      debugPrint("Status: ${response.statusCode}");
-      debugPrint("Body: ${response.body}");
+    
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // ✅ Successfully saved profile
