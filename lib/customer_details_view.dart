@@ -35,11 +35,14 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
 
   List<CallLogEntry> _displayCalls = [];
   String _headerDate = '';
+  List<dynamic> _customers = [];
+   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _fetchCalls();
+    _fetchCustomers();
   }
    Future<String?> getToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -49,6 +52,53 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   final id = prefs.getInt('id'); // fetch as int
   return id?.toString();         // convert safely to String
+}
+
+Future<void> _fetchCustomers() async {
+  var token = await getToken();
+  var id = await getid();
+
+  setState(() => _loading = true);
+  try {
+    var response = await https.get(
+      Uri.parse("$api/api/contact/info/staff/$id/"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+
+    print('Customer fetch status: ${response.statusCode}');
+    print('Customer fetch body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      // decode once
+      final data = List<dynamic>.from(jsonDecode(response.body));
+
+      // 🔹 find this customer (matching widget.id) and read note
+      String? existingNote;
+      for (var c in data) {
+        if (c['id'] == widget.id) {
+          existingNote = c['note'];
+          break;
+        }
+      }
+
+      setState(() {
+        _customers = data;
+        _loading = false;
+      });
+
+      // 🔹 set the text of the notes field if note exists
+      if (existingNote != null && existingNote.toString().trim().isNotEmpty) {
+        _noteController.text = existingNote.toString();
+      }
+    } else {
+      setState(() => _loading = false);
+    }
+  } catch (e) {
+    setState(() {
+      _customers = [];
+      _loading = false;
+    });
+  }
 }
 
 Future<void> _updateContact() async {
@@ -66,7 +116,8 @@ Future<void> _updateContact() async {
       body: jsonEncode({'note': _noteController.text}),
     );
 
-  
+  print('Update response status: ${response.statusCode}');
+  print('Update response body: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -439,29 +490,29 @@ if (widget.id != 0 && widget.id != null) ...[
 
                   const SizedBox(height: 20),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: const Icon(
-                        Icons.calendar_today,
-                        color: Colors.white,
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[850],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onPressed: _pickReminderDate,
-                      label: Text(
-                        _reminderDate == null
-                            ? 'Set Reminder'
-                            : 'Reminder: ${_reminderDate!.day}-${_reminderDate!.month}-${_reminderDate!.year}',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
+                  // SizedBox(
+                  //   width: double.infinity,
+                  //   child: ElevatedButton.icon(
+                  //     icon: const Icon(
+                  //       Icons.calendar_today,
+                  //       color: Colors.white,
+                  //     ),
+                  //     style: ElevatedButton.styleFrom(
+                  //       backgroundColor: Colors.grey[850],
+                  //       shape: RoundedRectangleBorder(
+                  //         borderRadius: BorderRadius.circular(12),
+                  //       ),
+                  //       padding: const EdgeInsets.symmetric(vertical: 16),
+                  //     ),
+                  //     onPressed: _pickReminderDate,
+                  //     label: Text(
+                  //       _reminderDate == null
+                  //           ? 'Set Reminder'
+                  //           : 'Reminder: ${_reminderDate!.day}-${_reminderDate!.month}-${_reminderDate!.year}',
+                  //       style: const TextStyle(color: Colors.white),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),

@@ -26,8 +26,9 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
-    _fetchCustomers();
     _selectedIndex = widget.initialIndex;
+
+    _fetchCustomers();
   }
 
   Future<String?> getToken() async {
@@ -49,39 +50,42 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> _fetchCustomers() async {
-    final token = await getToken();
-    final id = await getid();
+    print("Fetching customers...");
+    var token = await getToken();
+    var id = await getid();
 
     setState(() => _loading = true);
-
     try {
-      final response = await http.get(
+      var response = await http.get(
         Uri.parse("$api/api/contact/info/staff/$id/"),
-        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
+        headers: {"Authorization": "Bearer $token"},
       );
-     
-      if (response.statusCode == 200) {
-        final List<dynamic> items = List<dynamic>.from(
-          jsonDecode(response.body),
-        );
 
-        _phoneToCustomerId.clear();
+      if (response.statusCode == 200) {
         setState(() {
-          _customers = items;
+          _customers = List<dynamic>.from(jsonDecode(response.body));
           _loading = false;
         });
       } else {
         setState(() => _loading = false);
       }
     } catch (e) {
-      setState(() => _loading = false);
+      setState(() {
+        _customers = [];
+        _loading = false;
+      });
     }
   }
 
   // Bottom navigation tap handler
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
+void _onItemTapped(int index) async {
+  setState(() => _selectedIndex = index);
+
+  // 🔥 When user comes back to Contacts tab → refresh list
+  if (index == 1) {
+    await _fetchCustomers();
   }
+}
 
   // --- Build Page Body ---
   @override
@@ -213,7 +217,7 @@ class _HomepageState extends State<Homepage> {
                                       MaterialPageRoute(
                                         builder:
                                             (context) => CustomerDetailsView(
-                                              id:customer['id'],
+                                              id: customer['id'],
                                               customerName: name,
                                               phoneNumber: phone,
                                               date: DateTime.now(),
@@ -235,8 +239,8 @@ class _HomepageState extends State<Homepage> {
                                 MaterialPageRoute(
                                   builder:
                                       (context) => CustomerDetailsView(
-                                        id:customer['id'],
-                                    customerName: name,
+                                        id: customer['id'],
+                                        customerName: name,
                                         phoneNumber: phone,
                                         date: DateTime.now(),
                                         stateName: stateName,
