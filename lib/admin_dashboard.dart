@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:be_call/admin_datewise_callreport.dart';
+import 'package:be_call/admin_statewise_report.dart';
 import 'package:be_call/api.dart';
 import 'package:be_call/callreport_date_wise.dart';
 import 'package:be_call/callreport_statewise.dart';
@@ -80,7 +82,7 @@ getDateWise();
     return totalSeconds;
   }
 
-  Future<void> getDateWise() async {
+Future<void> getDateWise() async {
   setState(() {
     isLoading = true;
   });
@@ -93,19 +95,22 @@ getDateWise();
   try {
     var res = await http.get(
       Uri.parse("$api/api/call/report/"),
-      headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
     );
-
 
     if (res.statusCode == 200) {
       List<dynamic> allData = jsonDecode(res.body);
 
-      // ✅ Filter only today's records
+      // filter today only
       List<dynamic> data = allData.where((call) {
-        if (call['date'] == null && call['created'] == null) return false;
+        if (call['date'] == null && call['created'] == null && call['created_at'] == null) {
+          return false;
+        }
         try {
-          // handle both possible keys
-          String dateStr = call['date'] ?? call['created'];
+          String dateStr = call['date'] ?? call['created'] ?? call['created_at'];
           DateTime createdDate = DateTime.parse(dateStr).toLocal();
           String createdStr = DateFormat('yyyy-MM-dd').format(createdDate);
           return createdStr == todayStr;
@@ -114,39 +119,65 @@ getDateWise();
         }
       }).toList();
 
-
       Map<String, Map<String, dynamic>> grouped = {};
 
       for (var call in data) {
         String name = call['created_by_name'] ?? 'Unknown';
-        String status = call['status'] ?? '';
+        String status = (call['status'] ?? '').toString().toLowerCase();
         String durationStr = call['duration'] ?? '0 sec';
         double amount = (call['amount'] ?? 0).toDouble();
 
-        if (status.toLowerCase() == 'productive') {
-          grouped.putIfAbsent(
-            name,
-            () => {'count': 0, 'duration': 0, 'amount': 0.0},
-          );
+        grouped.putIfAbsent(
+          name,
+          () => {
+            'productive_count': 0,
+            'active_count': 0,
+            'total_count': 0,
+            'productive_duration': 0,
+            'active_duration': 0,
+            'total_duration': 0,
+            'amount': 0.0,
+          },
+        );
 
-          grouped[name]!['count'] += 1;
-          grouped[name]!['duration'] += parseDuration(durationStr);
+        int dur = parseDuration(durationStr);
+
+        if (status == 'productive') {
+          grouped[name]!['productive_count'] += 1;
+          grouped[name]!['productive_duration'] += dur;
           grouped[name]!['amount'] += amount;
         }
+
+        if (status == 'active') {
+          grouped[name]!['active_count'] += 1;
+          grouped[name]!['active_duration'] += dur;
+        }
+
+        grouped[name]!['total_count'] += 1;
+        grouped[name]!['total_duration'] += dur;
       }
 
+      // ✅ SORT BY HIGHEST TOTAL DURATION FIRST
+      List<Map<String, dynamic>> sortedList = grouped.entries.map((e) {
+        return {
+          'name': e.key,
+          'productive_count': e.value['productive_count'],
+          'active_count': e.value['active_count'],
+          'total_count': e.value['total_count'],
+          'productive_duration': e.value['productive_duration'],
+          'active_duration': e.value['active_duration'],
+          'total_duration': e.value['total_duration'],
+          'amount': e.value['amount'],
+        };
+      }).toList()
+        ..sort(
+          (a, b) => b['total_duration'].compareTo(a['total_duration']),
+        );
+
       setState(() {
-        groupedData = grouped.entries
-            .map((e) => {
-                  'name': e.key,
-                  'count': e.value['count'],
-                  'duration': e.value['duration'],
-                  'amount': e.value['amount'],
-                })
-            .toList();
+        groupedData = sortedList;
         isLoading = false;
       });
-
     } else {
       setState(() => isLoading = false);
     }
@@ -212,6 +243,10 @@ getDateWise();
         Uri.parse("$api/api/call/report/summary/"),
         headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
       );
+
+      print("response.body: ${response.body}");
+      print("response.statusCode: ${response.statusCode}");
+
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -470,140 +505,170 @@ getDateWise();
        // 🟢 STAFF PERFORMANCE OVERVIEW
 _buildSectionTitle("Staff Performance (Top 3)"),
 const SizedBox(height: 10),
-Container(
-  width: double.infinity,
-  decoration: BoxDecoration(
-    color: const Color(0xFF101010),
-    borderRadius: BorderRadius.circular(14),
-    border: Border.all(color: Colors.white24, width: 1),
-  ),
-  child: Table(
-    border: TableBorder.symmetric(
-      inside: const BorderSide(color: Colors.white24, width: 0.5),
-      outside: const BorderSide(color: Colors.white24, width: 1),
+SingleChildScrollView(
+  scrollDirection: Axis.horizontal,
+  child: ConstrainedBox(
+    constraints: BoxConstraints(
+      minWidth: MediaQuery.of(context).size.width * 2,
     ),
-    columnWidths: const {
-      0: FlexColumnWidth(2),
-      1: FlexColumnWidth(2),
-      2: FlexColumnWidth(2),
-      3: FlexColumnWidth(2),
-    },
-    children: [
-      // Header Row
-      const TableRow(
-        decoration: BoxDecoration(color: Color.fromARGB(255, 26, 164, 143)),
-        children: [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("Staff",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white)),
-          ),
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("Duration",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white)),
-          ),
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("Productive",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white)),
-          ),
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text("Total",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.white)),
-          ),
-        ],
+    child: Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF101010),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white24, width: 1),
       ),
-      ...(() {
-        final sorted =
-            List<Map<String, dynamic>>.from(groupedData)..sort((a, b) => b['count'].compareTo(a['count']));
-        final top3 = sorted.take(3).toList();
 
-        return top3.map((item) {
-          final hours = (item['duration'] / 3600).floor();
-          final minutes = ((item['duration'] % 3600) / 60).floor();
-          return TableRow(
-            decoration: const BoxDecoration(color: Color(0xFF181818)),
+      child: Table(
+        border: TableBorder.symmetric(
+          inside: const BorderSide(color: Colors.white24, width: 0.5),
+          outside: const BorderSide(color: Colors.white24, width: 1),
+        ),
+
+        columnWidths: const {
+          0: FlexColumnWidth(2),
+          1: FlexColumnWidth(1.5),
+          2: FlexColumnWidth(1.5),
+          3: FlexColumnWidth(1.5),
+          4: FlexColumnWidth(2),
+          5: FlexColumnWidth(2),
+          6: FlexColumnWidth(2),
+          7: FlexColumnWidth(2),
+        },
+
+        children: [
+          /// ---------------- HEADER ----------------
+          const TableRow(
+            decoration: BoxDecoration(color: Color.fromARGB(255, 26, 164, 143)),
             children: [
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(item['name'],
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70)),
+                padding: EdgeInsets.all(8.0),
+                child: Text("Staff", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text("${hours}h ${minutes}m",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70)),
+                padding: EdgeInsets.all(8.0),
+                child: Text("Productive", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text("${item['count']}",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70)),
+                padding: EdgeInsets.all(8.0),
+                child: Text("Active", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text("₹${item['amount'].toStringAsFixed(0)}",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white)),
+                padding: EdgeInsets.all(8.0),
+                child: Text("Total", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text("Productive Duration", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text("Active Duration", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text("Total Duration", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text("Amount", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ],
-          );
-        }).toList();
-      })(),
+          ),
 
-      // ✅ “See More” Row
-      TableRow(
-        decoration: const BoxDecoration(color: Color(0xFF151515)),
-        children: [
-          
-          const TableCell(child: SizedBox()), // empty columns
-          const TableCell(child: SizedBox()),
-          const TableCell(child: SizedBox()),
-          TableCell(
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CallreportDateWise(),
+          /// ---------------- BODY: Only Top 3 ----------------
+          ...(() {
+            final top3 = groupedData.take(3).toList();
+
+            return top3.map((item) {
+              String formatDuration(int sec) => "$sec sec";
+
+              return TableRow(
+                decoration: const BoxDecoration(color: Color(0xFF181818)),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(item['name'], textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
                   ),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Center(
-                  child: Text(
-                    "See More→",
-                    style: TextStyle(
-                      color: const Color.fromARGB(255, 26, 164, 143),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      letterSpacing: 0.5,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text("${item['productive_count']}", textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text("${item['active_count']}", textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text("${item['total_count']}", textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(formatDuration(item['productive_duration']), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(formatDuration(item['active_duration']), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(formatDuration(item['total_duration']), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text("₹${item['amount'].toStringAsFixed(0)}", textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)),
+                  ),
+                ],
+              );
+            }).toList();
+          })(),
+
+          /// ---------------- SEE MORE ROW ----------------
+          TableRow(
+            decoration: const BoxDecoration(color: Color(0xFF151515)),
+            children: [
+              const TableCell(child: SizedBox()),
+              const TableCell(child: SizedBox()),
+              const TableCell(child: SizedBox()),
+              const TableCell(child: SizedBox()),
+              const TableCell(child: SizedBox()),
+              const TableCell(child: SizedBox()),
+              const TableCell(child: SizedBox()),
+              TableCell(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const admin_CallreportDateWise(),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Center(
+                      child: Text(
+                        "See More →",
+                        style: TextStyle(
+                          color: const Color.fromARGB(255, 26, 164, 143),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
-    ],
+    ),
   ),
-),
+)
 
 
+
+,
 const SizedBox(height: 25),
 
 // 🟢 STATE WISE SUMMARY
@@ -711,7 +776,7 @@ Container(
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const CallreportStatewise(),
+                    builder: (context) => const admin_CallreportStatewise(),
                   ),
                 );
               },

@@ -20,11 +20,15 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
   List<_GroupedCall> _allCalls = [];
   List<_GroupedCall> _filteredCalls = [];
   final TextEditingController _searchCtrl = TextEditingController();
+  final Set<String> _submittedCalls = {};
 
   @override
   void initState() {
     super.initState();
-    _loadCalls();
+    _loadCalls().then((_) {
+      // After loading device call logs, load staff call reports from backend
+      fetchCallReportsData();
+    });
     _fetchCustomers();
     _searchCtrl.addListener(_onSearch);
   }
@@ -56,6 +60,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
 
   List<dynamic> _customers = [];
   bool _loading = true;
+
   Future<void> _fetchCustomers() async {
     final token = await getToken();
     final id = await getid();
@@ -65,9 +70,11 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     try {
       final response = await http.get(
         Uri.parse("$api/api/contact/info/staff/$id/"),
-        headers: {"Authorization": "Bearer $token","Content-Type": "application/json",},
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
       );
-     
 
       if (response.statusCode == 200) {
         final List<dynamic> items = List<dynamic>.from(
@@ -104,46 +111,100 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     }
   }
 
-  Future<void> sendCallReport({
-  required String customerName,
-  required String duration,
-  required String phone,
-  required DateTime callDateTime, // 👈 Added
-  int? customerId,
-}) async {
-  final url = Uri.parse("$api/api/call/report/");
-  final token = await getToken();
-  if (token == null) return;
+  Future<List<dynamic>> fetchCallReportsData() async {
+    final token = await getToken();
+    final userId = await getUserId();
 
-  // Format the date-time for backend (e.g. ISO8601)
-  final formattedDateTime = callDateTime.toIso8601String();
-
-  final body = <String, dynamic>{
-    "customer_name": customerName,
-    "duration": duration,
-    "status": "Active",
-    "phone": phone,
-    "call_datetime": formattedDateTime, // 👈 New field
-    if (customerId != null) "Customer": customerId,
-  };
-
-  try {
-    final response = await http.post(
-      url,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-    } else {
+    if (token == null || userId == null) {
+      return [];
     }
-  } catch (e) {
-  }
-}
 
+    final url = Uri.parse("$api/api/call/report/staff/$userId/");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        // Build submitted call keys from backend data: normalize(phone) + call_datetime
+        _submittedCalls.clear();
+        for (final item in data) {
+          final phone = item['phone'];
+          final dtString = item['call_datetime'];
+
+          if (phone is String && dtString is String) {
+            final dt = DateTime.tryParse(dtString);
+            if (dt != null) {
+              final key = "${_normalize(phone)}_${dt.millisecondsSinceEpoch}";
+              _submittedCalls.add(key);
+            }
+          }
+        }
+
+        // refresh UI so buttons for already-submitted calls get disabled
+        setState(() {});
+
+        return data; // return your JSON list
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> sendCallReport({
+    required String customerName,
+    required String duration,
+    required String phone,
+    required DateTime callDateTime, // 👈 Added
+    int? customerId,
+  }) async {
+    final url = Uri.parse("$api/api/call/report/");
+    final token = await getToken();
+    if (token == null) return;
+
+    // Format the date-time for backend (e.g. ISO8601)
+    final formattedDateTime = callDateTime.toIso8601String();
+
+    final body = <String, dynamic>{
+      "customer_name": customerName,
+      "duration": duration,
+      "status": "Active",
+      "phone": phone,
+      "call_datetime": formattedDateTime, // 👈 New field
+      if (customerId != null) "Customer": customerId,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        // success
+      } else {
+        // handle error if needed
+      }
+    } catch (e) {
+      // handle error if needed
+    }
+  }
 
   void _onSearch() {
     final q = _searchCtrl.text.toLowerCase();
@@ -168,56 +229,22 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
 
       if (entries.isEmpty) return;
 
-      // ✅ Take the most recent call (first entry)
-      final lastCall = entries.first;
-
-      if (lastCall.timestamp == null || lastCall.number == null) return;
-
-      final prefs = await SharedPreferences.getInstance();
-      final callKey = "${lastCall.number}_${lastCall.timestamp}";
-      final lastReportedKey = prefs.getString('last_reported_call');
-
-      // --- 📞 Only send if this call is new ---
-      if (callKey != lastReportedKey) {
-        if ((lastCall.callType == CallType.outgoing ||
-                lastCall.callType == CallType.incoming) &&
-            (lastCall.duration != null && lastCall.duration! > 0)) {
-          // Completed call
-        await sendCallReport(
-  customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
-  duration: "${lastCall.duration} sec",
-  phone: lastCall.number ?? '',
-  customerId: _phoneToCustomerId[_normalize(lastCall.number ?? '')],
-  callDateTime: DateTime.fromMillisecondsSinceEpoch(lastCall.timestamp ?? 0), // 👈 Added
-);
-
-
-          await prefs.setString('last_reported_call', callKey);
-        } else if (lastCall.callType == CallType.missed) {
-          // Missed call
-         await sendCallReport(
-  customerName: lastCall.name ?? lastCall.number ?? 'Unknown',
-  duration: "${lastCall.duration} sec",
-  phone: lastCall.number ?? '',
-  customerId: _phoneToCustomerId[_normalize(lastCall.number ?? '')],
-  callDateTime: DateTime.fromMillisecondsSinceEpoch(lastCall.timestamp ?? 0), // 👈 Added
-);
-
-          await prefs.setString('last_reported_call', callKey);
-        }
-      }
-
-      // ✅ Build list for UI
-    final list = entries.map(
-  (e) => _GroupedCall(
-    number: e.number ?? '',
-    name: e.name ?? e.number ?? 'Unknown',
-    date: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
-    lastTime: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
-    callType: e.callType ?? CallType.incoming,
-    duration: e.duration ?? 0, // 👈 store duration
-  ),
-).toList();
+      // Only load data for UI.
+      final list =
+          entries
+              .map(
+                (e) => _GroupedCall(
+                  number: e.number ?? '',
+                  name: e.name ?? e.number ?? 'Unknown',
+                  date: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
+                  lastTime: DateTime.fromMillisecondsSinceEpoch(
+                    e.timestamp ?? 0,
+                  ),
+                  callType: e.callType ?? CallType.incoming,
+                  duration: e.duration ?? 0,
+                ),
+              )
+              .toList();
 
       setState(() {
         _allCalls = list;
@@ -313,7 +340,10 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
           // ✅ Pull-to-refresh for list
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _loadCalls,
+              onRefresh: () async {
+                await _loadCalls();
+                await fetchCallReportsData();
+              },
               color: Colors.orange,
               backgroundColor: Colors.black,
               child:
@@ -329,6 +359,14 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                                 Divider(color: Colors.grey[800], height: 1),
                         itemBuilder: (context, i) {
                           final c = _filteredCalls[i];
+
+                          // Unique key for this call: normalized phone + call time
+                          final callKey =
+                              "${_normalize(c.number)}_${c.lastTime.millisecondsSinceEpoch}";
+
+                          final isSubmitted =
+                              _submittedCalls.contains(callKey);
+
                           return ListTile(
                             leading: const CircleAvatar(
                               backgroundColor: Colors.white10,
@@ -358,52 +396,89 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                               'Phone',
                               style: TextStyle(color: Colors.white54),
                             ),
-                           trailing: Row(
-  mainAxisSize: MainAxisSize.min,
-  children: [
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          _dateLabel(c.date),
-          style: const TextStyle(color: Colors.white, fontSize: 14),
-        ),
-        Text(
-          _timeLabel(c.lastTime),
-          style: const TextStyle(color: Colors.white54, fontSize: 13),
-        ),
-      ],
-    ),
-    const SizedBox(width: 10),
-    IconButton(
-      icon: const Icon(Icons.add_circle_outline,
-          color: Colors.tealAccent, size: 24),
-      tooltip: "Add Call Report",
-      onPressed: () async {
-        final normPhone = _normalize(c.number);
-        final customerId = _phoneToCustomerId[normPhone];
-        final customerName = c.name ?? c.number;
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _dateLabel(c.date),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      _timeLabel(c.lastTime),
+                                      style: const TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(width: 10),
+                                IconButton(
+                                  icon: Icon(
+                                    isSubmitted
+                                        ? Icons.check_circle
+                                        : Icons.add_circle_outline,
+                                    color:
+                                        isSubmitted
+                                            ? Colors.grey
+                                            : Colors.tealAccent,
+                                    size: 24,
+                                  ),
+                                  tooltip:
+                                      isSubmitted
+                                          ? "Submitted"
+                                          : "Add Call Report",
+                                  onPressed:
+                                      isSubmitted
+                                          ? null // disable button
+                                          : () async {
+                                              final normPhone = _normalize(
+                                                c.number,
+                                              );
+                                              final customerId =
+                                                  _phoneToCustomerId[
+                                                    normPhone
+                                                  ];
+                                              final customerName =
+                                                  c.name ?? c.number;
 
-        await sendCallReport(
-          customerName: customerName,
-         duration: "${c.duration} sec",
+                                              await sendCallReport(
+                                                customerName: customerName,
+                                                duration: "${c.duration} sec",
+                                                phone: c.number,
+                                                callDateTime: c.lastTime,
+                                                customerId: customerId,
+                                              );
 
-          phone: c.number,
-          callDateTime: c.lastTime,
-          customerId: customerId,
-        );
+                                              setState(() {
+                                                _submittedCalls.add(
+                                                  callKey,
+                                                ); // disable button for this call
+                                              });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("✅ Call report added successfully"),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
-    ),
-  ],
-),
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    "Call report added successfully",
+                                                  ),
+                                                  duration: Duration(
+                                                    seconds: 2,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                ),
+                              ],
+                            ),
 
                             onTap:
                                 () => Navigator.push(
