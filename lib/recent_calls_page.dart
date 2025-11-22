@@ -473,7 +473,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                                               ).showSnackBar(
                                                 const SnackBar(
                                                   content: Text(
-                                                    "Call report added successfully",
+                                                    "Call reports added successfully",
                                                   ),
                                                   duration: Duration(
                                                     seconds: 2,
