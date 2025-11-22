@@ -58,6 +58,13 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     return prefs.getInt('id');
   }
 
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
   List<dynamic> _customers = [];
   bool _loading = true;
 
@@ -364,8 +371,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                           final callKey =
                               "${_normalize(c.number)}_${c.lastTime.millisecondsSinceEpoch}";
 
-                          final isSubmitted =
-                              _submittedCalls.contains(callKey);
+                          final isSubmitted = _submittedCalls.contains(callKey);
 
                           return ListTile(
                             leading: const CircleAvatar(
@@ -420,32 +426,33 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                                   ],
                                 ),
                                 const SizedBox(width: 10),
-                                IconButton(
-                                  icon: Icon(
-                                    isSubmitted
-                                        ? Icons.check_circle
-                                        : Icons.add_circle_outline,
-                                    color:
+
+                                // 👉 SHOW BUTTON ONLY IF CALL IS FROM TODAY
+                                if (_isToday(c.date))
+                                  IconButton(
+                                    icon: Icon(
+                                      isSubmitted
+                                          ? Icons.check_circle
+                                          : Icons.add_circle_outline,
+                                      color:
+                                          isSubmitted
+                                              ? Colors.grey
+                                              : Colors.tealAccent,
+                                      size: 24,
+                                    ),
+                                    tooltip:
                                         isSubmitted
-                                            ? Colors.grey
-                                            : Colors.tealAccent,
-                                    size: 24,
-                                  ),
-                                  tooltip:
-                                      isSubmitted
-                                          ? "Submitted"
-                                          : "Add Call Report",
-                                  onPressed:
-                                      isSubmitted
-                                          ? null // disable button
-                                          : () async {
+                                            ? "Submitted"
+                                            : "Add Call Report",
+                                    onPressed:
+                                        isSubmitted
+                                            ? null
+                                            : () async {
                                               final normPhone = _normalize(
                                                 c.number,
                                               );
                                               final customerId =
-                                                  _phoneToCustomerId[
-                                                    normPhone
-                                                  ];
+                                                  _phoneToCustomerId[normPhone];
                                               final customerName =
                                                   c.name ?? c.number;
 
@@ -458,9 +465,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                                               );
 
                                               setState(() {
-                                                _submittedCalls.add(
-                                                  callKey,
-                                                ); // disable button for this call
+                                                _submittedCalls.add(callKey);
                                               });
 
                                               ScaffoldMessenger.of(
@@ -476,7 +481,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
                                                 ),
                                               );
                                             },
-                                ),
+                                  ),
                               ],
                             ),
 
