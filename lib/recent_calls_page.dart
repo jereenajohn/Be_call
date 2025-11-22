@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:be_call/add_contact.dart';
 import 'package:be_call/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,7 +27,6 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
   void initState() {
     super.initState();
     _loadCalls().then((_) {
-      // After loading device call logs, load staff call reports from backend
       fetchCallReportsData();
     });
     _fetchCustomers();
@@ -42,15 +42,8 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var idValue = prefs.get('id');
     if (idValue is int) return idValue;
-    if (idValue is String) {
-      return int.tryParse(idValue);
-    }
+    if (idValue is String) return int.tryParse(idValue);
     return null;
-  }
-
-  Future<String?> getUserName() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('name');
   }
 
   Future<int?> getid() async {
@@ -63,6 +56,10 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     return date.year == now.year &&
         date.month == now.month &&
         date.day == now.day;
+  }
+
+  bool _isKnownCustomer(String phone) {
+    return _phoneToCustomerId.containsKey(_normalize(phone));
   }
 
   List<dynamic> _customers = [];
@@ -84,25 +81,19 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> items = List<dynamic>.from(
-          jsonDecode(response.body),
-        );
+        final List<dynamic> items = List<dynamic>.from(jsonDecode(response.body));
 
-        // build lookup map
         _phoneToCustomerId.clear();
         for (final c in items) {
-          // tolerate different id key names (id or customer_id)
           final dynamic rawId = c['id'] ?? c['customer_id'];
           if (rawId == null) continue;
+
           final int? cid = rawId is int ? rawId : int.tryParse('$rawId');
           if (cid == null) continue;
 
           for (final p in _extractPhones(c)) {
             final norm = _normalize(p);
-            if (norm.isNotEmpty) {
-              // only set if not present to keep first match
-              _phoneToCustomerId.putIfAbsent(norm, () => cid);
-            }
+            if (norm.isNotEmpty) _phoneToCustomerId.putIfAbsent(norm, () => cid);
           }
         }
 
@@ -122,9 +113,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     final token = await getToken();
     final userId = await getUserId();
 
-    if (token == null || userId == null) {
-      return [];
-    }
+    if (token == null || userId == null) return [];
 
     final url = Uri.parse("$api/api/call/report/staff/$userId/");
 
@@ -137,13 +126,9 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
 
-        // Build submitted call keys from backend data: normalize(phone) + call_datetime
         _submittedCalls.clear();
         for (final item in data) {
           final phone = item['phone'];
@@ -158,10 +143,8 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
           }
         }
 
-        // refresh UI so buttons for already-submitted calls get disabled
         setState(() {});
-
-        return data; // return your JSON list
+        return data;
       } else {
         return [];
       }
@@ -174,14 +157,13 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     required String customerName,
     required String duration,
     required String phone,
-    required DateTime callDateTime, // 👈 Added
+    required DateTime callDateTime,
     int? customerId,
   }) async {
     final url = Uri.parse("$api/api/call/report/");
     final token = await getToken();
     if (token == null) return;
 
-    // Format the date-time for backend (e.g. ISO8601)
     final formattedDateTime = callDateTime.toIso8601String();
 
     final body = <String, dynamic>{
@@ -189,12 +171,12 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       "duration": duration,
       "status": "Active",
       "phone": phone,
-      "call_datetime": formattedDateTime, // 👈 New field
+      "call_datetime": formattedDateTime,
       if (customerId != null) "Customer": customerId,
     };
 
     try {
-      final response = await http.post(
+      await http.post(
         url,
         headers: {
           "Content-Type": "application/json",
@@ -202,30 +184,19 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
         },
         body: jsonEncode(body),
       );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        // success
-      } else {
-        // handle error if needed
-      }
-    } catch (e) {
-      // handle error if needed
-    }
+    } catch (e) {}
   }
 
   void _onSearch() {
     final q = _searchCtrl.text.toLowerCase();
     setState(() {
-      _filteredCalls =
-          q.isEmpty
-              ? _allCalls
-              : _allCalls
-                  .where(
-                    (c) =>
-                        (c.name ?? '').toLowerCase().contains(q) ||
-                        c.number.toLowerCase().contains(q),
-                  )
-                  .toList();
+      _filteredCalls = q.isEmpty
+          ? _allCalls
+          : _allCalls
+              .where((c) =>
+                  (c.name ?? '').toLowerCase().contains(q) ||
+                  c.number.toLowerCase().contains(q))
+              .toList();
     });
   }
 
@@ -236,22 +207,18 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
 
       if (entries.isEmpty) return;
 
-      // Only load data for UI.
-      final list =
-          entries
-              .map(
-                (e) => _GroupedCall(
-                  number: e.number ?? '',
-                  name: e.name ?? e.number ?? 'Unknown',
-                  date: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
-                  lastTime: DateTime.fromMillisecondsSinceEpoch(
-                    e.timestamp ?? 0,
-                  ),
-                  callType: e.callType ?? CallType.incoming,
-                  duration: e.duration ?? 0,
-                ),
-              )
-              .toList();
+      final list = entries
+          .map(
+            (e) => _GroupedCall(
+              number: e.number ?? '',
+              name: e.name ?? e.number ?? 'Unknown',
+              date: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
+              lastTime: DateTime.fromMillisecondsSinceEpoch(e.timestamp ?? 0),
+              callType: e.callType ?? CallType.incoming,
+              duration: e.duration ?? 0,
+            ),
+          )
+          .toList();
 
       setState(() {
         _allCalls = list;
@@ -260,26 +227,21 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
     }
   }
 
-  // Store a fast lookup: normalizedPhone -> customerId
   final Map<String, int> _phoneToCustomerId = {};
 
-  // Safely normalize to last 10 digits (works for +91 and most formats)
   String _normalize(String n) {
     final digits = n.replaceAll(RegExp(r'\D'), '');
     return digits.length > 10 ? digits.substring(digits.length - 10) : digits;
   }
 
-  // Try to read possible phone fields from a customer object
   List<String> _extractPhones(dynamic c) {
     final phones = <String>[];
 
-    // common single fields
     for (final k in ['phone', 'phone_number', 'mobile', 'mobile1', 'mobile2']) {
       final v = c[k];
       if (v is String && v.trim().isNotEmpty) phones.add(v.trim());
     }
 
-    // arrays like ["+91...","..."]
     final arr = c['phones'];
     if (arr is List) {
       for (final p in arr) {
@@ -287,13 +249,13 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       }
     }
 
-    // de-dup
     return phones.toSet().toList();
   }
 
   String _dateLabel(DateTime d) {
     final today = DateTime.now();
     final yest = today.subtract(const Duration(days: 1));
+
     if (d.year == today.year && d.month == today.month && d.day == today.day) {
       return 'Today';
     } else if (d.year == yest.year &&
@@ -305,7 +267,7 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
   }
 
   String _timeLabel(DateTime dt) =>
-      DateFormat('h:mm a').format(dt); // e.g. 4:03 PM
+      DateFormat('h:mm a').format(dt);
 
   @override
   Widget build(BuildContext context) {
@@ -324,7 +286,6 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
       ),
       body: Column(
         children: [
-          // 🔍 Search bar
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
@@ -344,7 +305,6 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
             ),
           ),
 
-          // ✅ Pull-to-refresh for list
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
@@ -353,155 +313,162 @@ class _RecentCallsPageState extends State<RecentCallsPage> {
               },
               color: Colors.orange,
               backgroundColor: Colors.black,
-              child:
-                  _filteredCalls.isEmpty
-                      ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                      : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: _filteredCalls.length,
-                        separatorBuilder:
-                            (_, __) =>
-                                Divider(color: Colors.grey[800], height: 1),
-                        itemBuilder: (context, i) {
-                          final c = _filteredCalls[i];
+              child: _filteredCalls.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    )
+                  : ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: _filteredCalls.length,
+                      separatorBuilder: (_, __) =>
+                          Divider(color: Colors.grey[800], height: 1),
+                      itemBuilder: (context, i) {
+                        final c = _filteredCalls[i];
 
-                          // Unique key for this call: normalized phone + call time
-                          final callKey =
-                              "${_normalize(c.number)}_${c.lastTime.millisecondsSinceEpoch}";
+                        final callKey =
+                            "${_normalize(c.number)}_${c.lastTime.millisecondsSinceEpoch}";
+                        final isSubmitted = _submittedCalls.contains(callKey);
+                        final isKnown = _isKnownCustomer(c.number);
 
-                          final isSubmitted = _submittedCalls.contains(callKey);
-
-                          return ListTile(
-                            leading: const CircleAvatar(
-                              backgroundColor: Colors.white10,
-                              child: Icon(Icons.person, color: Colors.white),
-                            ),
-                            title: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    (c.name != null &&
-                                            c.name!.trim().isNotEmpty)
-                                        ? c.name!
-                                        : c.number,
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Colors.white10,
+                            child: Icon(Icons.person, color: Colors.white),
+                          ),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  (c.name != null &&
+                                          c.name!.trim().isNotEmpty)
+                                      ? c.name!
+                                      : c.number,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              _callTypeIcon(c.callType),
+                            ],
+                          ),
+                          subtitle: const Text(
+                            'Phone',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    _dateLabel(c.date),
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontWeight: FontWeight.w500,
                                       fontSize: 14,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                _callTypeIcon(c.callType),
-                              ],
-                            ),
-                            subtitle: const Text(
-                              'Phone',
-                              style: TextStyle(color: Colors.white54),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      _dateLabel(c.date),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
+                                  Text(
+                                    _timeLabel(c.lastTime),
+                                    style: const TextStyle(
+                                      color: Colors.white54,
+                                      fontSize: 13,
                                     ),
-                                    Text(
-                                      _timeLabel(c.lastTime),
-                                      style: const TextStyle(
-                                        color: Colors.white54,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(width: 10),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 10),
 
-                                // 👉 SHOW BUTTON ONLY IF CALL IS FROM TODAY
-                                if (_isToday(c.date))
-                                  IconButton(
-                                    icon: Icon(
-                                      isSubmitted
-                                          ? Icons.check_circle
-                                          : Icons.add_circle_outline,
-                                      color:
+                              if (_isToday(c.date))
+                                isKnown
+                                    ? IconButton(
+                                        icon: Icon(
                                           isSubmitted
+                                              ? Icons.check_circle
+                                              : Icons.add_circle_outline,
+                                          color: isSubmitted
                                               ? Colors.grey
                                               : Colors.tealAccent,
-                                      size: 24,
-                                    ),
-                                    tooltip:
-                                        isSubmitted
+                                          size: 24,
+                                        ),
+                                        tooltip: isSubmitted
                                             ? "Submitted"
                                             : "Add Call Report",
-                                    onPressed:
-                                        isSubmitted
+                                        onPressed: isSubmitted
                                             ? null
                                             : () async {
-                                              final normPhone = _normalize(
-                                                c.number,
-                                              );
-                                              final customerId =
-                                                  _phoneToCustomerId[normPhone];
-                                              final customerName =
-                                                  c.name ?? c.number;
+                                                final normPhone =
+                                                    _normalize(c.number);
+                                                final customerId =
+                                                    _phoneToCustomerId[
+                                                        normPhone];
+                                                final customerName =
+                                                    c.name ?? c.number;
 
-                                              await sendCallReport(
-                                                customerName: customerName,
-                                                duration: "${c.duration} sec",
-                                                phone: c.number,
-                                                callDateTime: c.lastTime,
-                                                customerId: customerId,
-                                              );
+                                                await sendCallReport(
+                                                  customerName: customerName,
+                                                  duration:
+                                                      "${c.duration} sec",
+                                                  phone: c.number,
+                                                  callDateTime: c.lastTime,
+                                                  customerId: customerId,
+                                                );
 
-                                              setState(() {
-                                                _submittedCalls.add(callKey);
-                                              });
+                                                setState(() {
+                                                  _submittedCalls.add(callKey);
+                                                });
 
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    "Call reports added successfully",
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                        "Call report added successfully"),
+                                                    duration:
+                                                        Duration(seconds: 2),
                                                   ),
-                                                  duration: Duration(
-                                                    seconds: 2,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                  ),
-                              ],
-                            ),
-
-                            onTap:
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => CustomerDetailsView(
-                                          id: 0,
-                                          customerName: c.name ?? c.number,
-                                          phoneNumber: c.number,
-                                          date: c.lastTime,
-                                          stateName: null,
+                                                );
+                                              },
+                                      )
+                                    : TextButton(
+                                        style: TextButton.styleFrom(
+                                          foregroundColor:
+                                              Colors.yellowAccent,
                                         ),
-                                  ),
-                                ),
-                          );
-                        },
-                      ),
+                                        child: const Text("Add"),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  AddContactFormPage(
+                                                phoneNumber: c.number,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                            ],
+                          ),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CustomerDetailsView(
+                                id: 0,
+                                customerName: c.name ?? c.number,
+                                phoneNumber: c.number,
+                                date: c.lastTime,
+                                stateName: null,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ),
         ],
@@ -516,7 +483,7 @@ class _GroupedCall {
   final DateTime date;
   DateTime lastTime;
   CallType callType;
-  int duration; // 👈 add this
+  int duration;
 
   _GroupedCall({
     required this.number,
@@ -524,21 +491,18 @@ class _GroupedCall {
     required this.date,
     required this.lastTime,
     required this.callType,
-    required this.duration, // 👈 add this
+    required this.duration,
   });
 }
 
 Icon _callTypeIcon(CallType type) {
   const double iconSize = 13;
+
   switch (type) {
     case CallType.outgoing:
       return const Icon(Icons.call_made, color: Colors.green, size: iconSize);
     case CallType.incoming:
-      return const Icon(
-        Icons.call_received,
-        color: Colors.blue,
-        size: iconSize,
-      );
+      return const Icon(Icons.call_received, color: Colors.blue, size: iconSize);
     case CallType.missed:
       return const Icon(Icons.call_missed, color: Colors.red, size: iconSize);
     default:
